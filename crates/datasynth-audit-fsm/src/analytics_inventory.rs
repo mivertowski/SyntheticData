@@ -13,6 +13,10 @@ use std::collections::HashMap;
 
 const FSA_INVENTORY: &str = include_str!("../inventories/data_analytics_inventory_fsa.json");
 const IA_INVENTORY: &str = include_str!("../inventories/data_analytics_inventory_ia.json");
+const SOC2_INVENTORY: &str = include_str!("../inventories/data_analytics_inventory_soc2.json");
+const PCAOB_INVENTORY: &str = include_str!("../inventories/data_analytics_inventory_pcaob.json");
+const REGULATORY_INVENTORY: &str =
+    include_str!("../inventories/data_analytics_inventory_regulatory.json");
 const FORM_ONTOLOGY: &str = include_str!("../inventories/form_ontology.json");
 
 // ---------------------------------------------------------------------------
@@ -110,6 +114,37 @@ pub fn load_fsa_inventory() -> HashMap<String, StepInventory> {
 /// by `step_id`.
 pub fn load_ia_inventory() -> HashMap<String, StepInventory> {
     load_inventory(IA_INVENTORY)
+}
+
+/// Load the SOC 2 (Service Organization Controls) analytics inventory as a
+/// `HashMap` keyed by `step_id`.
+pub fn load_soc2_inventory() -> HashMap<String, StepInventory> {
+    load_inventory(SOC2_INVENTORY)
+}
+
+/// Load the PCAOB (Integrated Audit) analytics inventory as a `HashMap`
+/// keyed by `step_id`.
+pub fn load_pcaob_inventory() -> HashMap<String, StepInventory> {
+    load_inventory(PCAOB_INVENTORY)
+}
+
+/// Load the Regulatory Examination analytics inventory as a `HashMap` keyed
+/// by `step_id`.
+pub fn load_regulatory_inventory() -> HashMap<String, StepInventory> {
+    load_inventory(REGULATORY_INVENTORY)
+}
+
+/// Return the appropriate analytics inventory for the given methodology
+/// framework string (as declared in the blueprint YAML).
+pub fn load_inventory_for_framework(framework: &str) -> HashMap<String, StepInventory> {
+    match framework {
+        "ISA" => load_fsa_inventory(),
+        "IIA-GIAS" => load_ia_inventory(),
+        "AICPA-TSC" => load_soc2_inventory(),
+        "PCAOB" => load_pcaob_inventory(),
+        "REGULATORY" => load_regulatory_inventory(),
+        _ => load_fsa_inventory(), // fallback
+    }
 }
 
 fn load_inventory(json: &str) -> HashMap<String, StepInventory> {
@@ -298,6 +333,107 @@ mod tests {
         assert!(
             lookup_form_fields(&ontology, "nonexistent_category_xyz").is_none(),
             "nonexistent category should return None"
+        );
+    }
+
+    // ---- SOC 2 inventory tests ----
+
+    #[test]
+    fn test_soc2_inventory_loads() {
+        let inv = load_soc2_inventory();
+        assert!(!inv.is_empty(), "SOC 2 inventory should not be empty");
+        // Should have security and availability steps
+        assert!(
+            inv.contains_key("sec_test_3"),
+            "SOC 2 inventory should contain security testing step sec_test_3"
+        );
+        assert!(
+            inv.contains_key("avail_test_2"),
+            "SOC 2 inventory should contain availability testing step avail_test_2"
+        );
+    }
+
+    // ---- PCAOB inventory tests ----
+
+    #[test]
+    fn test_pcaob_inventory_loads() {
+        let inv = load_pcaob_inventory();
+        assert!(!inv.is_empty(), "PCAOB inventory should not be empty");
+        // Should have ICFR and substantive steps
+        assert!(
+            inv.contains_key("icfr_plan_1"),
+            "PCAOB inventory should contain ICFR planning step icfr_plan_1"
+        );
+        assert!(
+            inv.contains_key("sub_proc_4"),
+            "PCAOB inventory should contain substantive procedure step sub_proc_4"
+        );
+    }
+
+    // ---- Regulatory inventory tests ----
+
+    #[test]
+    fn test_regulatory_inventory_loads() {
+        let inv = load_regulatory_inventory();
+        assert!(
+            !inv.is_empty(),
+            "Regulatory inventory should not be empty"
+        );
+        // Should have BSA and capital steps
+        assert!(
+            inv.contains_key("bsa_step_2"),
+            "Regulatory inventory should contain BSA step bsa_step_2"
+        );
+        assert!(
+            inv.contains_key("cap_step_1"),
+            "Regulatory inventory should contain capital step cap_step_1"
+        );
+    }
+
+    // ---- Framework selection test ----
+
+    #[test]
+    fn test_inventory_for_framework() {
+        // ISA -> FSA inventory
+        let fsa = load_inventory_for_framework("ISA");
+        assert!(
+            fsa.contains_key("mat_step_1"),
+            "ISA framework should load FSA inventory"
+        );
+
+        // IIA-GIAS -> IA inventory
+        let ia = load_inventory_for_framework("IIA-GIAS");
+        assert!(
+            ia.contains_key("universe_step_1"),
+            "IIA-GIAS framework should load IA inventory"
+        );
+
+        // AICPA-TSC -> SOC 2 inventory
+        let soc2 = load_inventory_for_framework("AICPA-TSC");
+        assert!(
+            soc2.contains_key("sec_test_3"),
+            "AICPA-TSC framework should load SOC 2 inventory"
+        );
+
+        // PCAOB -> PCAOB inventory
+        let pcaob = load_inventory_for_framework("PCAOB");
+        assert!(
+            pcaob.contains_key("sub_proc_4"),
+            "PCAOB framework should load PCAOB inventory"
+        );
+
+        // REGULATORY -> Regulatory inventory
+        let reg = load_inventory_for_framework("REGULATORY");
+        assert!(
+            reg.contains_key("bsa_step_2"),
+            "REGULATORY framework should load Regulatory inventory"
+        );
+
+        // Unknown -> fallback to FSA
+        let fallback = load_inventory_for_framework("UNKNOWN_FRAMEWORK");
+        assert!(
+            fallback.contains_key("mat_step_1"),
+            "Unknown framework should fall back to FSA inventory"
         );
     }
 }

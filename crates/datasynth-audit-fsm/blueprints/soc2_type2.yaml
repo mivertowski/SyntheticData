@@ -261,6 +261,7 @@ procedures:
         binding: requirement
         command: agree_soc_terms
         emits: SocTermsAgreed
+        judgment_level: low
         evidence:
           inputs: []
           outputs:
@@ -281,6 +282,7 @@ procedures:
         binding: requirement
         command: assess_service_org_readiness
         emits: ServiceOrgReadinessAssessed
+        judgment_level: medium
         standards:
           - ref: "AT-C 320"
             paragraphs: ["8", "9"]
@@ -341,6 +343,7 @@ procedures:
         binding: requirement
         command: determine_trust_categories
         emits: TrustCategoriesDetermined
+        judgment_level: medium
         standards:
           - ref: "TSC-CC1"
             paragraphs: []
@@ -356,6 +359,7 @@ procedures:
         binding: requirement
         command: identify_controls_to_criteria
         emits: ControlsCriteriaMapped
+        judgment_level: medium
         evidence:
           inputs: []
           outputs:
@@ -376,6 +380,7 @@ procedures:
         binding: requirement
         command: determine_reporting_period
         emits: ReportingPeriodDetermined
+        judgment_level: low
         standards:
           - ref: "AT-C 205"
             paragraphs: ["30"]
@@ -426,6 +431,7 @@ procedures:
         binding: requirement
         command: evaluate_description_criteria
         emits: DescriptionCriteriaEvaluated
+        judgment_level: high
         evidence:
           inputs:
             - ref: system_description
@@ -463,6 +469,7 @@ procedures:
         binding: requirement
         command: evaluate_description_controls
         emits: DescriptionControlsEvaluated
+        judgment_level: high
         evidence:
           inputs:
             - ref: control_matrix
@@ -531,6 +538,7 @@ procedures:
         binding: requirement
         command: select_security_controls
         emits: SecurityControlsSelected
+        judgment_level: medium
         evidence:
           inputs:
             - ref: control_matrix
@@ -574,6 +582,7 @@ procedures:
         binding: requirement
         command: execute_security_tests
         emits: SecurityTestsExecuted
+        judgment_level: low
         standards:
           - ref: "TSC-CC7"
             paragraphs: []
@@ -592,6 +601,7 @@ procedures:
         binding: requirement
         command: evaluate_security_results
         emits: SecurityResultsEvaluated
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -613,6 +623,7 @@ procedures:
         binding: requirement
         command: document_security_exceptions
         emits: SecurityExceptionsDocumented
+        judgment_level: low
         evidence:
           inputs: []
           outputs:
@@ -661,6 +672,7 @@ procedures:
         binding: requirement
         command: select_availability_controls
         emits: AvailabilityControlsSelected
+        judgment_level: medium
         evidence:
           inputs:
             - ref: control_matrix
@@ -680,6 +692,7 @@ procedures:
         binding: requirement
         command: determine_availability_test_approach
         emits: AvailabilityTestApproachDetermined
+        judgment_level: medium
         standards:
           - ref: "AT-C 205"
             paragraphs: ["25"]
@@ -696,6 +709,7 @@ procedures:
         binding: requirement
         command: execute_availability_tests
         emits: AvailabilityTestsExecuted
+        judgment_level: low
       - id: avail_test_4
         order: 4
         action: evaluate
@@ -707,6 +721,7 @@ procedures:
         binding: requirement
         command: evaluate_availability_results
         emits: AvailabilityResultsEvaluated
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -759,6 +774,7 @@ procedures:
         binding: requirement
         command: select_pi_controls
         emits: PiControlsSelected
+        judgment_level: medium
         evidence:
           inputs:
             - ref: control_matrix
@@ -778,6 +794,7 @@ procedures:
         binding: requirement
         command: determine_pi_test_approach
         emits: PiTestApproachDetermined
+        judgment_level: medium
         standards:
           - ref: "AT-C 205"
             paragraphs: ["25"]
@@ -794,6 +811,7 @@ procedures:
         binding: requirement
         command: execute_pi_tests
         emits: PiTestsExecuted
+        judgment_level: low
       - id: pi_test_4
         order: 4
         action: evaluate
@@ -805,6 +823,7 @@ procedures:
         binding: requirement
         command: evaluate_pi_results
         emits: PiResultsEvaluated
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -857,6 +876,7 @@ procedures:
         binding: requirement
         command: select_confidentiality_controls
         emits: ConfidentialityControlsSelected
+        judgment_level: medium
         evidence:
           inputs:
             - ref: control_matrix
@@ -876,6 +896,7 @@ procedures:
         binding: requirement
         command: determine_conf_test_approach
         emits: ConfTestApproachDetermined
+        judgment_level: medium
         standards:
           - ref: "AT-C 205"
             paragraphs: ["25"]
@@ -892,6 +913,7 @@ procedures:
         binding: requirement
         command: execute_conf_tests
         emits: ConfTestsExecuted
+        judgment_level: low
       - id: conf_test_4
         order: 4
         action: evaluate
@@ -903,6 +925,7 @@ procedures:
         binding: requirement
         command: evaluate_conf_results
         emits: ConfResultsEvaluated
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -956,6 +979,7 @@ procedures:
         binding: requirement
         command: select_privacy_controls
         emits: PrivacyControlsSelected
+        judgment_level: medium
         evidence:
           inputs:
             - ref: control_matrix
@@ -993,6 +1017,7 @@ procedures:
         binding: requirement
         command: execute_privacy_tests
         emits: PrivacyTestsExecuted
+        judgment_level: low
       - id: priv_test_4
         order: 4
         action: evaluate
@@ -1004,6 +1029,7 @@ procedures:
         binding: requirement
         command: evaluate_privacy_results
         emits: PrivacyResultsEvaluated
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -1058,6 +1084,7 @@ procedures:
         binding: requirement
         command: identify_cuecs
         emits: CuecsIdentified
+        judgment_level: low
         standards:
           - ref: "AT-C 320"
             paragraphs: ["29"]
@@ -1074,6 +1101,7 @@ procedures:
         binding: requirement
         command: evaluate_cuec_design
         emits: CuecDesignEvaluated
+        judgment_level: high
         evidence:
           inputs:
             - ref: system_description
@@ -1141,6 +1169,7 @@ procedures:
         binding: requirement
         command: aggregate_exceptions
         emits: ExceptionsAggregated
+        judgment_level: low
         evidence:
           inputs:
             - ref: exception_log
@@ -1237,6 +1266,7 @@ procedures:
         binding: requirement
         command: review_management_assertion
         emits: ManagementAssertionReviewed
+        judgment_level: high
         evidence:
           inputs:
             - ref: management_assertion
@@ -1317,6 +1347,7 @@ procedures:
         binding: requirement
         command: evaluate_soc_evidence_sufficiency
         emits: SocEvidenceSufficiencyEvaluated
+        judgment_level: high
         evidence:
           inputs:
             - ref: security_test_results
@@ -1365,6 +1396,7 @@ procedures:
         binding: requirement
         command: issue_soc2_report
         emits: Soc2ReportIssued
+        judgment_level: low
         evidence:
           inputs: []
           outputs:

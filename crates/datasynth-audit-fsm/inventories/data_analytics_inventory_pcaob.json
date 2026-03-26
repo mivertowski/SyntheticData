@@ -1,0 +1,1392 @@
+[
+  {
+    "step_id": "pcaob_accept_1",
+    "procedure_id": "pcaob_engagement_acceptance",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "PCAOB independence evaluation data",
+        "scope": "",
+        "fields": [
+          "non_audit_services",
+          "partner_rotation_status",
+          "fee_arrangements",
+          "financial_relationships"
+        ],
+        "source_system": "Firm independence system",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "pcaob_accept_2",
+    "procedure_id": "pcaob_engagement_acceptance",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Integrated audit engagement terms",
+        "scope": "",
+        "fields": [
+          "audit_scope",
+          "icfr_scope",
+          "reporting_framework",
+          "audit_committee_communications"
+        ],
+        "source_system": "",
+        "format": "Engagement letter",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "pcaob_accept_3",
+    "procedure_id": "pcaob_engagement_acceptance",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Draft/prior year financial statements for materiality",
+        "scope": "Full year, consolidated",
+        "fields": [
+          "revenue",
+          "total_assets",
+          "net_income",
+          "total_equity",
+          "gross_profit"
+        ],
+        "source_system": "",
+        "format": "Trial balance export",
+        "frequency": "",
+        "assertion": "All assertions"
+      },
+      {
+        "data_type": "industry_data",
+        "name": "Industry benchmarks for materiality",
+        "scope": "",
+        "fields": [
+          "industry_median_revenue",
+          "peer_group_metrics"
+        ],
+        "source_system": "Industry databases",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Materiality benchmark analysis",
+        "description": "Compare materiality percentages across benchmarks (revenue, assets, equity, profit) and select the most appropriate benchmark for the integrated audit",
+        "input_data": [
+          "Draft/prior year financial statements"
+        ],
+        "data_features": [
+          "revenue",
+          "total_assets",
+          "net_income",
+          "equity"
+        ],
+        "graph_features": [],
+        "expected_output": "Materiality amount, performance materiality, and clearly trivial threshold",
+        "threshold": "",
+        "tool_hint": "Calculate % of each benchmark; apply PCAOB guidance ranges"
+      }
+    ]
+  },
+  {
+    "step_id": "icfr_plan_1",
+    "procedure_id": "icfr_planning",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "prior_audit",
+        "name": "Prior year audit results and ICFR findings",
+        "scope": "Prior 1-3 years",
+        "fields": [
+          "prior_control_deficiencies",
+          "prior_misstatements",
+          "prior_icfr_opinion",
+          "prior_cam_topics"
+        ],
+        "source_system": "Engagement management system",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "organizational",
+        "name": "Entity structure and organizational changes",
+        "scope": "",
+        "fields": [
+          "organizational_structure",
+          "management_changes",
+          "system_changes",
+          "business_combinations"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Prior year findings trend analysis",
+        "description": "Analyze trends in prior audit findings, control deficiencies, and misstatements to inform current year audit strategy",
+        "input_data": [
+          "Prior year audit results"
+        ],
+        "data_features": [
+          "finding_type",
+          "severity",
+          "year",
+          "remediation_status"
+        ],
+        "graph_features": [],
+        "expected_output": "Trend chart of findings and deficiencies over prior periods",
+        "threshold": "",
+        "tool_hint": "Multi-year finding comparison with severity classification"
+      }
+    ]
+  },
+  {
+    "step_id": "icfr_plan_2",
+    "procedure_id": "icfr_planning",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Fraud risk factor data",
+        "scope": "",
+        "fields": [
+          "management_incentives",
+          "opportunity_factors",
+          "attitude_indicators",
+          "industry_fraud_risks"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "financial_statements",
+        "name": "Revenue and journal entry data for fraud risk",
+        "scope": "Full year",
+        "fields": [
+          "revenue_by_segment",
+          "journal_entry_populations",
+          "management_estimate_areas"
+        ],
+        "source_system": "ERP/GL system",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "icfr_plan_3",
+    "procedure_id": "icfr_planning",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Control documentation and process maps",
+        "scope": "",
+        "fields": [
+          "process_name",
+          "control_points",
+          "financial_reporting_objectives",
+          "significant_accounts_mapped"
+        ],
+        "source_system": "GRC platform",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "icfr_plan_4",
+    "procedure_id": "icfr_planning",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Testing plan and dual-purpose test identification",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "test_nature",
+          "test_timing",
+          "test_extent",
+          "dual_purpose_flag"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "sig_acct_1",
+    "procedure_id": "identify_significant_accounts",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Trial balance and account analysis",
+        "scope": "Full year, comparative",
+        "fields": [
+          "account_number",
+          "account_name",
+          "balance",
+          "transaction_volume",
+          "year_over_year_change"
+        ],
+        "source_system": "ERP/GL system",
+        "format": "Trial balance export",
+        "frequency": "",
+        "assertion": "All assertions"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "stratification",
+        "name": "Account significance stratification",
+        "description": "Stratify accounts by size, volatility, and qualitative risk factors to identify significant accounts per AS 2110",
+        "input_data": [
+          "Trial balance"
+        ],
+        "data_features": [
+          "account_balance",
+          "transaction_volume",
+          "year_over_year_change_pct",
+          "complexity_indicator"
+        ],
+        "graph_features": [],
+        "expected_output": "Ranked list of accounts by significance with materiality thresholds",
+        "threshold": "Materiality and qualitative thresholds",
+        "tool_hint": "Sort by balance magnitude and volatility; apply quantitative and qualitative filters"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Account composition and susceptibility analysis",
+        "description": "Analyze account composition and susceptibility to misstatement as risk indicators for significance determination",
+        "input_data": [
+          "Trial balance",
+          "Prior year financial statements"
+        ],
+        "data_features": [
+          "balance_as_pct_of_total",
+          "turnover_ratio",
+          "estimate_component_pct"
+        ],
+        "graph_features": [],
+        "expected_output": "Account risk profile with susceptibility scores",
+        "threshold": "",
+        "tool_hint": "Calculate each account as % of total assets/revenue and flag high-risk composition"
+      }
+    ]
+  },
+  {
+    "step_id": "sig_acct_2",
+    "procedure_id": "identify_significant_accounts",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Assertion-level risk data",
+        "scope": "",
+        "fields": [
+          "account_name",
+          "relevant_assertions",
+          "likely_misstatement_sources",
+          "risk_of_material_misstatement"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "sig_acct_3",
+    "procedure_id": "identify_significant_accounts",
+    "phase": "engagement_acceptance",
+    "data_requirements": [
+      {
+        "data_type": "process_documentation",
+        "name": "Transaction flow documentation",
+        "scope": "",
+        "fields": [
+          "process_name",
+          "transaction_classes",
+          "initiation_point",
+          "recording_point",
+          "financial_statement_impact"
+        ],
+        "source_system": "",
+        "format": "Process maps",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "elc_1",
+    "procedure_id": "evaluate_entity_level_controls",
+    "phase": "risk_assessment",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Entity-level control documentation (COSO)",
+        "scope": "",
+        "fields": [
+          "coso_component",
+          "control_description",
+          "evidence_of_operation",
+          "tone_at_top_indicators"
+        ],
+        "source_system": "GRC platform",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "elc_2",
+    "procedure_id": "evaluate_entity_level_controls",
+    "phase": "risk_assessment",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "IT general controls documentation",
+        "scope": "",
+        "fields": [
+          "itgc_category",
+          "control_description",
+          "application_systems",
+          "access_security_config",
+          "change_management_logs"
+        ],
+        "source_system": "IT systems",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "elc_3",
+    "procedure_id": "evaluate_entity_level_controls",
+    "phase": "risk_assessment",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Period-end financial reporting process data",
+        "scope": "",
+        "fields": [
+          "journal_entry_types",
+          "management_estimate_areas",
+          "non_routine_transactions",
+          "adjusting_entries"
+        ],
+        "source_system": "ERP/GL system",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "elc_4",
+    "procedure_id": "evaluate_entity_level_controls",
+    "phase": "risk_assessment",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Entity-level control assessment summary",
+        "scope": "",
+        "fields": [
+          "coso_component",
+          "assessment_result",
+          "precision_level",
+          "impact_on_testing"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "walk_1",
+    "procedure_id": "walkthroughs",
+    "phase": "risk_assessment",
+    "data_requirements": [
+      {
+        "data_type": "process_documentation",
+        "name": "Process maps and transaction flow descriptions",
+        "scope": "",
+        "fields": [
+          "process_name",
+          "key_control_points",
+          "personnel_involved",
+          "documents_and_records",
+          "it_systems_used"
+        ],
+        "source_system": "GRC/process documentation",
+        "format": "Process flowcharts",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "walk_2",
+    "procedure_id": "walkthroughs",
+    "phase": "risk_assessment",
+    "data_requirements": [
+      {
+        "data_type": "transaction_samples",
+        "name": "Transaction samples for walkthrough tracing",
+        "scope": "",
+        "fields": [
+          "transaction_id",
+          "transaction_date",
+          "initiation_document",
+          "authorization_evidence",
+          "recording_evidence"
+        ],
+        "source_system": "ERP/GL system",
+        "format": "Transaction detail",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "sampling",
+        "name": "Walkthrough transaction selection",
+        "description": "Select representative transactions for each significant process to trace from initiation through financial statement recording",
+        "input_data": [
+          "Transaction populations"
+        ],
+        "data_features": [
+          "transaction_type",
+          "process_name",
+          "transaction_date"
+        ],
+        "graph_features": [],
+        "expected_output": "Selected transactions for walkthrough per significant process",
+        "threshold": "At least one transaction per significant process",
+        "tool_hint": "Judgmental selection targeting varied transaction types and timing"
+      }
+    ]
+  },
+  {
+    "step_id": "walk_3",
+    "procedure_id": "walkthroughs",
+    "phase": "risk_assessment",
+    "data_requirements": [
+      {
+        "data_type": "process_documentation",
+        "name": "Control point and misstatement risk data",
+        "scope": "",
+        "fields": [
+          "control_point",
+          "misstatement_type",
+          "control_design_assessment",
+          "implementation_status"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "walk_4",
+    "procedure_id": "walkthroughs",
+    "phase": "risk_assessment",
+    "data_requirements": [
+      {
+        "data_type": "process_documentation",
+        "name": "Walkthrough documentation summary",
+        "scope": "",
+        "fields": [
+          "process_name",
+          "controls_identified",
+          "misstatement_points",
+          "walkthrough_conclusions"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "ctrl_test_1",
+    "procedure_id": "test_controls_design_and_effectiveness",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Controls selection for testing",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "significant_process",
+          "assertion_addressed",
+          "fraud_risk_flag",
+          "control_nature"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "ctrl_test_2",
+    "procedure_id": "test_controls_design_and_effectiveness",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "control_evidence",
+        "name": "Control operating evidence",
+        "scope": "Full period",
+        "fields": [
+          "control_id",
+          "evidence_type",
+          "test_date",
+          "sample_item",
+          "result"
+        ],
+        "source_system": "Various source systems",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "transaction_populations",
+        "name": "Transaction populations for sampling",
+        "scope": "Full period",
+        "fields": [
+          "transaction_id",
+          "transaction_date",
+          "amount",
+          "control_evidence_available"
+        ],
+        "source_system": "ERP/GL system",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "sampling",
+        "name": "Controls test sampling",
+        "description": "Select statistically valid samples from transaction populations for each control tested, using sample sizes per PCAOB guidance",
+        "input_data": [
+          "Transaction populations"
+        ],
+        "data_features": [
+          "population_size",
+          "control_frequency",
+          "risk_level"
+        ],
+        "graph_features": [],
+        "expected_output": "Sample selections per control with statistical basis",
+        "threshold": "PCAOB sample size requirements (25-60 items based on frequency)",
+        "tool_hint": "Apply PCAOB sample size table by control frequency and risk"
+      }
+    ]
+  },
+  {
+    "step_id": "ctrl_test_3",
+    "procedure_id": "test_controls_design_and_effectiveness",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "IT application control evidence",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "application_name",
+          "sod_configuration",
+          "automated_calculation_logic",
+          "interface_controls"
+        ],
+        "source_system": "Application systems",
+        "format": "System configuration exports",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "ctrl_test_4",
+    "procedure_id": "test_controls_design_and_effectiveness",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Controls test results summary",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "sample_size",
+          "deviations_found",
+          "deviation_rate",
+          "effectiveness_conclusion"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "ctrl_test_5",
+    "procedure_id": "test_controls_design_and_effectiveness",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Control deviation analysis",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "deviation_nature",
+          "deviation_frequency",
+          "additional_testing_needed"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "sub_proc_1",
+    "procedure_id": "substantive_procedures",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "General ledger and sub-ledger data",
+        "scope": "Full year",
+        "fields": [
+          "account_number",
+          "posting_date",
+          "amount",
+          "description",
+          "document_reference",
+          "user_id"
+        ],
+        "source_system": "ERP/GL system",
+        "format": "GL detail export",
+        "frequency": "",
+        "assertion": "All assertions"
+      },
+      {
+        "data_type": "financial_data",
+        "name": "Risk assessment and controls results",
+        "scope": "",
+        "fields": [
+          "significant_account",
+          "assertion",
+          "risk_level",
+          "controls_reliance_level"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "sub_proc_2",
+    "procedure_id": "substantive_procedures",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Confirmation and detail test data",
+        "scope": "",
+        "fields": [
+          "confirmation_type",
+          "counterparty",
+          "confirmed_balance",
+          "book_balance",
+          "variance"
+        ],
+        "source_system": "GL/sub-ledger",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, Rights and Obligations"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "three_way_match",
+        "name": "Confirmation three-way match",
+        "description": "Match confirmation responses to book balances and supporting documents for accuracy and completeness",
+        "input_data": [
+          "Confirmation responses",
+          "GL balances",
+          "Supporting documents"
+        ],
+        "data_features": [
+          "confirmed_balance",
+          "book_balance",
+          "supporting_amount",
+          "variance"
+        ],
+        "graph_features": [],
+        "expected_output": "Reconciliation of confirmed to book balances with variance analysis",
+        "threshold": "Immaterial variance threshold",
+        "tool_hint": "Join confirmation data with GL; flag variances exceeding threshold"
+      }
+    ]
+  },
+  {
+    "step_id": "sub_proc_3",
+    "procedure_id": "substantive_procedures",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Analytical procedure data (financial and non-financial)",
+        "scope": "Full year, comparative",
+        "fields": [
+          "account_name",
+          "current_balance",
+          "prior_year_balance",
+          "budget_amount",
+          "non_financial_driver"
+        ],
+        "source_system": "ERP/GL system",
+        "format": "Trial balance with comparatives",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "expectation_model",
+        "name": "Substantive analytical expectation model",
+        "description": "Develop independent expectations for account balances using financial and operational data, compare to recorded amounts, and investigate significant variances",
+        "input_data": [
+          "Current and prior year trial balances",
+          "Operational data"
+        ],
+        "data_features": [
+          "current_balance",
+          "expected_balance",
+          "variance",
+          "variance_pct"
+        ],
+        "graph_features": [],
+        "expected_output": "Expectation vs. actual comparison with variance investigation",
+        "threshold": "Performance materiality",
+        "tool_hint": "Regression or ratio-based expectation model with variance highlighting"
+      },
+      {
+        "procedure_type": "regression",
+        "name": "Revenue/expense regression analysis",
+        "description": "Apply regression analysis to revenue and expense accounts using operational drivers to identify unexpected relationships",
+        "input_data": [
+          "GL data",
+          "Operational metrics"
+        ],
+        "data_features": [
+          "revenue_by_period",
+          "operational_driver",
+          "residual"
+        ],
+        "graph_features": [],
+        "expected_output": "Regression model with R-squared and significant residual identification",
+        "threshold": "Statistical significance at p < 0.05",
+        "tool_hint": "OLS regression with residual analysis"
+      }
+    ]
+  },
+  {
+    "step_id": "sub_proc_4",
+    "procedure_id": "substantive_procedures",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Journal entries and management estimates",
+        "scope": "Full year",
+        "fields": [
+          "entry_id",
+          "posting_date",
+          "amount",
+          "user_id",
+          "description",
+          "entry_source",
+          "approval_status"
+        ],
+        "source_system": "ERP/GL system",
+        "format": "Journal entry detail",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "benford_law",
+        "name": "Journal entry Benford's Law analysis",
+        "description": "Apply Benford's first-digit law to journal entry populations to identify entries with unusual amount patterns indicative of management override",
+        "input_data": [
+          "Journal entries"
+        ],
+        "data_features": [
+          "entry_amount",
+          "first_digit_distribution"
+        ],
+        "graph_features": [],
+        "expected_output": "Benford deviation analysis with flagged outlier entries",
+        "threshold": "MAD > 0.015",
+        "tool_hint": "Calculate first-digit distribution; compare to Benford expected; flag deviating populations"
+      },
+      {
+        "procedure_type": "journal_entry_testing",
+        "name": "Fraud-focused journal entry testing (AS 2401)",
+        "description": "Test journal entries for characteristics indicating management override: round amounts, weekend postings, unusual users, entries posted to multiple unrelated accounts",
+        "input_data": [
+          "Journal entries"
+        ],
+        "data_features": [
+          "posting_date",
+          "day_of_week",
+          "amount",
+          "user_id",
+          "account_combination",
+          "entry_source"
+        ],
+        "graph_features": [],
+        "expected_output": "Risk-scored journal entries requiring investigation",
+        "threshold": "",
+        "tool_hint": "Multi-criteria risk scoring: weekend flag, round-amount flag, unusual-user flag"
+      }
+    ]
+  },
+  {
+    "step_id": "sub_proc_5",
+    "procedure_id": "substantive_procedures",
+    "phase": "testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Substantive procedure results and misstatements",
+        "scope": "",
+        "fields": [
+          "procedure_type",
+          "account_tested",
+          "misstatement_amount",
+          "misstatement_type",
+          "icfr_deficiency_indicator"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Misstatement pattern analysis",
+        "description": "Analyze identified misstatements for patterns indicating systematic errors or fraud across accounts and periods",
+        "input_data": [
+          "Misstatement schedule"
+        ],
+        "data_features": [
+          "account",
+          "misstatement_type",
+          "amount",
+          "direction"
+        ],
+        "graph_features": [],
+        "expected_output": "Pattern analysis of misstatements with systemic risk assessment",
+        "threshold": "",
+        "tool_hint": "Cluster misstatements by type, account, and direction"
+      }
+    ]
+  },
+  {
+    "step_id": "def_eval_1",
+    "procedure_id": "evaluate_control_deficiencies",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Control deficiency data",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "deficiency_description",
+          "potential_misstatement_magnitude",
+          "likelihood_of_occurrence",
+          "compensating_controls"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "def_eval_2",
+    "procedure_id": "evaluate_control_deficiencies",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Deficiency classification data",
+        "scope": "",
+        "fields": [
+          "deficiency_id",
+          "severity_classification",
+          "aggregation_assessment",
+          "material_weakness_flag"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "def_eval_3",
+    "procedure_id": "evaluate_control_deficiencies",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "communication",
+        "name": "Deficiency communication package",
+        "scope": "",
+        "fields": [
+          "deficiency_id",
+          "classification",
+          "remediation_plan",
+          "management_response"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "misstate_1",
+    "procedure_id": "evaluate_misstatements",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Misstatement schedule",
+        "scope": "",
+        "fields": [
+          "misstatement_type",
+          "account",
+          "amount",
+          "known_or_projected",
+          "corrected_flag"
+        ],
+        "source_system": "",
+        "format": "Summary of Misstatements (AS 2810)",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "variance_analysis",
+        "name": "Misstatement aggregation and materiality comparison",
+        "description": "Aggregate uncorrected misstatements and compare to materiality to evaluate whether financial statements require modification",
+        "input_data": [
+          "Misstatement schedule",
+          "Materiality workpaper"
+        ],
+        "data_features": [
+          "aggregate_uncorrected_amount",
+          "materiality_threshold",
+          "performance_materiality"
+        ],
+        "graph_features": [],
+        "expected_output": "Aggregate misstatement comparison to materiality with conclusion",
+        "threshold": "Overall materiality",
+        "tool_hint": "Sum uncorrected items; compare to materiality with waterfall chart"
+      }
+    ]
+  },
+  {
+    "step_id": "misstate_2",
+    "procedure_id": "evaluate_misstatements",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Prior year comparatives for misstatement evaluation",
+        "scope": "Prior year",
+        "fields": [
+          "prior_year_uncorrected_misstatements",
+          "turnaround_effect",
+          "carryover_effect"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "gc_pcaob_1",
+    "procedure_id": "going_concern_evaluation",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Going concern indicator data",
+        "scope": "",
+        "fields": [
+          "recurring_losses",
+          "working_capital_deficit",
+          "negative_cash_flows",
+          "debt_covenant_status",
+          "liquidity_ratios"
+        ],
+        "source_system": "Financial statements",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "gc_pcaob_2",
+    "procedure_id": "going_concern_evaluation",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "management_plans",
+        "name": "Management's going concern mitigation plans",
+        "scope": "",
+        "fields": [
+          "plan_description",
+          "feasibility_assessment",
+          "cash_flow_projections",
+          "financing_arrangements"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "ev_eval_1",
+    "procedure_id": "evaluate_audit_evidence",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Complete audit evidence package",
+        "scope": "",
+        "fields": [
+          "assertion",
+          "evidence_obtained",
+          "evidence_sufficiency",
+          "evidence_appropriateness"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "ev_eval_2",
+    "procedure_id": "evaluate_audit_evidence",
+    "phase": "evaluation",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Final financial statements for overall review",
+        "scope": "Full year, consolidated",
+        "fields": [
+          "financial_statement_line_items",
+          "disclosures",
+          "comparative_data"
+        ],
+        "source_system": "",
+        "format": "Annual report draft",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "cam_1",
+    "procedure_id": "critical_audit_matters",
+    "phase": "reporting",
+    "data_requirements": [
+      {
+        "data_type": "engagement_documentation",
+        "name": "Audit committee communications and significant judgments",
+        "scope": "",
+        "fields": [
+          "communication_topic",
+          "material_account_involved",
+          "judgment_complexity",
+          "audit_effort"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "expectation_model",
+        "name": "CAM identification assessment",
+        "description": "Evaluate matters communicated to the audit committee against CAM criteria: materiality, subjective/complex judgment, and audit effort",
+        "input_data": [
+          "Audit committee communications",
+          "Significant judgment documentation"
+        ],
+        "data_features": [
+          "materiality_flag",
+          "judgment_complexity_score",
+          "audit_effort_hours"
+        ],
+        "graph_features": [],
+        "expected_output": "Ranked list of CAM candidates with assessment against criteria",
+        "threshold": "",
+        "tool_hint": "Score each matter on CAM criteria dimensions"
+      }
+    ]
+  },
+  {
+    "step_id": "cam_2",
+    "procedure_id": "critical_audit_matters",
+    "phase": "reporting",
+    "data_requirements": [
+      {
+        "data_type": "engagement_documentation",
+        "name": "CAM determination data",
+        "scope": "",
+        "fields": [
+          "cam_candidate",
+          "judgment_degree",
+          "audit_effort_extent",
+          "evidence_difficulty"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "cam_3",
+    "procedure_id": "critical_audit_matters",
+    "phase": "reporting",
+    "data_requirements": [
+      {
+        "data_type": "report_drafting",
+        "name": "CAM communication draft components",
+        "scope": "",
+        "fields": [
+          "cam_description",
+          "principal_considerations",
+          "audit_response",
+          "financial_statement_reference"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "icfr_op_1",
+    "procedure_id": "icfr_opinion_formation",
+    "phase": "reporting",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "ICFR testing results and deficiency classification",
+        "scope": "",
+        "fields": [
+          "deficiency_severity",
+          "material_weakness_flag",
+          "management_assessment_result",
+          "entity_level_controls_result"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "icfr_op_2",
+    "procedure_id": "icfr_opinion_formation",
+    "phase": "reporting",
+    "data_requirements": [
+      {
+        "data_type": "opinion_formation",
+        "name": "ICFR opinion formation data",
+        "scope": "",
+        "fields": [
+          "opinion_type",
+          "material_weaknesses_identified",
+          "scope_limitations",
+          "assessment_date"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "fs_op_1",
+    "procedure_id": "financial_statement_opinion",
+    "phase": "reporting",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Financial statement presentation evaluation data",
+        "scope": "",
+        "fields": [
+          "aggregate_uncorrected_misstatements",
+          "going_concern_conclusion",
+          "overall_fraud_assessment"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "fs_op_2",
+    "procedure_id": "financial_statement_opinion",
+    "phase": "reporting",
+    "data_requirements": [
+      {
+        "data_type": "opinion_formation",
+        "name": "Financial statement opinion formation data",
+        "scope": "",
+        "fields": [
+          "opinion_type",
+          "fair_presentation_conclusion",
+          "gaap_conformity"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "fs_op_3",
+    "procedure_id": "financial_statement_opinion",
+    "phase": "reporting",
+    "data_requirements": [
+      {
+        "data_type": "report_components",
+        "name": "Integrated audit report components",
+        "scope": "",
+        "fields": [
+          "fs_opinion",
+          "icfr_opinion",
+          "cam_descriptions",
+          "auditor_tenure",
+          "explanatory_paragraphs"
+        ],
+        "source_system": "",
+        "format": "Final audit report",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  }
+]

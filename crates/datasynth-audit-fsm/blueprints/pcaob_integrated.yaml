@@ -305,6 +305,7 @@ procedures:
         binding: requirement
         command: agree_integrated_terms
         emits: IntegratedTermsAgreed
+        judgment_level: low
         evidence:
           inputs: []
           outputs:
@@ -329,6 +330,7 @@ procedures:
         binding: requirement
         command: determine_pcaob_materiality
         emits: PcaobMaterialityDetermined
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -383,6 +385,7 @@ procedures:
         binding: requirement
         command: develop_integrated_strategy
         emits: IntegratedStrategyDeveloped
+        judgment_level: medium
         evidence:
           inputs: []
           outputs:
@@ -427,6 +430,7 @@ procedures:
         binding: requirement
         command: plan_top_down_approach
         emits: TopDownApproachPlanned
+        judgment_level: medium
         standards:
           - ref: "AS 2201"
             paragraphs: ["21", "22"]
@@ -443,6 +447,7 @@ procedures:
         binding: requirement
         command: determine_testing_plan
         emits: TestingPlanDetermined
+        judgment_level: medium
         standards:
           - ref: "AS 2201"
             paragraphs: ["45", "46"]
@@ -492,6 +497,7 @@ procedures:
         binding: requirement
         command: identify_significant_accts
         emits: SignificantAcctsIdentified
+        judgment_level: medium
         standards:
           - ref: "AS 2110"
             paragraphs: ["41", "42"]
@@ -511,6 +517,7 @@ procedures:
         binding: requirement
         command: identify_relevant_assertions
         emits: RelevantAssertionsIdentified
+        judgment_level: medium
         standards:
           - ref: "AS 2110"
             paragraphs: ["43", "44"]
@@ -527,6 +534,7 @@ procedures:
         binding: requirement
         command: identify_significant_processes
         emits: SignificantProcessesIdentified
+        judgment_level: medium
         evidence:
           inputs: []
           outputs:
@@ -602,6 +610,7 @@ procedures:
         binding: requirement
         command: evaluate_it_general_controls
         emits: ItGeneralControlsEvaluated
+        judgment_level: high
         standards:
           - ref: "AS 2201"
             paragraphs: ["36", "37"]
@@ -618,6 +627,7 @@ procedures:
         binding: requirement
         command: evaluate_period_end_controls
         emits: PeriodEndControlsEvaluated
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -639,6 +649,7 @@ procedures:
         binding: requirement
         command: determine_elc_effect
         emits: ElcEffectDetermined
+        judgment_level: high
         standards:
           - ref: "AS 2201"
             paragraphs: ["25"]
@@ -693,6 +704,7 @@ procedures:
         binding: requirement
         command: plan_walkthroughs
         emits: WalkthroughsPlanned
+        judgment_level: medium
         standards:
           - ref: "AS 2201"
             paragraphs: ["37", "38"]
@@ -710,6 +722,7 @@ procedures:
         binding: requirement
         command: perform_walkthroughs
         emits: WalkthroughsPerformed
+        judgment_level: low
         standards:
           - ref: "AS 2201"
             paragraphs: ["39", "40"]
@@ -743,6 +756,7 @@ procedures:
         binding: requirement
         command: document_walkthroughs
         emits: WalkthroughsDocumented
+        judgment_level: low
         evidence:
           inputs: []
           outputs:
@@ -802,6 +816,7 @@ procedures:
         binding: requirement
         command: select_controls_to_test
         emits: ControlsToTestSelected
+        judgment_level: medium
         evidence:
           inputs:
             - ref: walkthrough_documentation
@@ -822,6 +837,7 @@ procedures:
         binding: requirement
         command: perform_dual_purpose_tests
         emits: DualPurposeTestsPerformed
+        judgment_level: low
         standards:
           - ref: "AS 2201"
             paragraphs: ["48", "49", "50"]
@@ -837,6 +853,7 @@ procedures:
         binding: requirement
         command: test_automated_controls
         emits: AutomatedControlsTested
+        judgment_level: low
         standards:
           - ref: "AS 2201"
             paragraphs: ["36", "37"]
@@ -876,6 +893,7 @@ procedures:
         binding: requirement
         command: determine_controls_sufficiency
         emits: ControlsSufficiencyDetermined
+        judgment_level: high
         decisions:
           - condition: "Are identified deviations significant?"
             branches:
@@ -931,6 +949,7 @@ procedures:
         binding: requirement
         command: design_substantive_procedures
         emits: SubstantiveProceduresDesigned
+        judgment_level: medium
         evidence:
           inputs:
             - ref: risk_assessment_summary
@@ -953,6 +972,7 @@ procedures:
         binding: requirement
         command: perform_tests_of_details
         emits: TestsOfDetailsPerformed
+        judgment_level: low
         standards:
           - ref: "AS 1105"
             paragraphs: ["4", "5"]
@@ -969,6 +989,7 @@ procedures:
         binding: requirement
         command: perform_analytical_procedures
         emits: AnalyticalProceduresPerformed
+        judgment_level: low
         standards:
           - ref: "AS 2301"
             paragraphs: ["13"]
@@ -985,6 +1006,7 @@ procedures:
         binding: requirement
         command: perform_fraud_procedures
         emits: FraudProceduresPerformed
+        judgment_level: low
         evidence:
           inputs:
             - ref: fraud_risk_assessment
@@ -1004,6 +1026,7 @@ procedures:
         binding: requirement
         command: evaluate_substantive_results
         emits: SubstantiveResultsEvaluated
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -1080,6 +1103,7 @@ procedures:
         binding: requirement
         command: classify_deficiencies
         emits: DeficienciesClassified
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -1108,6 +1132,7 @@ procedures:
         binding: requirement
         command: communicate_deficiencies
         emits: DeficienciesCommunicated
+        judgment_level: low
         standards:
           - ref: "AS 1301"
             paragraphs: ["10", "12"]
@@ -1154,6 +1179,7 @@ procedures:
         binding: requirement
         command: aggregate_misstatements
         emits: MisstatementsAggregated
+        judgment_level: low
         standards:
           - ref: "AS 2810"
             paragraphs: ["12", "13"]
@@ -1232,6 +1258,7 @@ procedures:
         binding: requirement
         command: evaluate_going_concern_conditions
         emits: GoingConcernConditionsEvaluated
+        judgment_level: high
         standards:
           - ref: "AS 2415"
             paragraphs: ["2", "3"]
@@ -1332,6 +1359,7 @@ procedures:
         binding: requirement
         command: perform_overall_review
         emits: OverallReviewPerformed
+        judgment_level: high
         evidence:
           inputs:
             - ref: risk_assessment_summary
@@ -1408,6 +1436,7 @@ procedures:
         binding: requirement
         command: determine_cams
         emits: CamsDetermined
+        judgment_level: high
         standards:
           - ref: "AS 3101"
             paragraphs: ["14", "15"]
@@ -1425,6 +1454,7 @@ procedures:
         binding: requirement
         command: draft_cam_communication
         emits: CamCommunicationDrafted
+        judgment_level: low
         evidence:
           inputs: []
           outputs:
@@ -1503,6 +1533,7 @@ procedures:
         binding: requirement
         command: form_icfr_opinion
         emits: IcfrOpinionFormed
+        judgment_level: high
         evidence:
           inputs: []
           outputs:
@@ -1591,6 +1622,7 @@ procedures:
         binding: requirement
         command: form_fs_opinion
         emits: FsOpinionFormed
+        judgment_level: high
         standards:
           - ref: "AS 3101"
             paragraphs: ["5", "6"]
@@ -1618,6 +1650,7 @@ procedures:
         binding: requirement
         command: issue_integrated_report
         emits: IntegratedReportIssued
+        judgment_level: low
         evidence:
           inputs:
             - ref: cam_documentation

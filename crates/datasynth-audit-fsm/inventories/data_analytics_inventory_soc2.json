@@ -1,0 +1,1277 @@
+[
+  {
+    "step_id": "soc_accept_1",
+    "procedure_id": "engagement_acceptance",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Service organization profile",
+        "scope": "",
+        "fields": [
+          "entity_name",
+          "industry",
+          "services_provided",
+          "prior_soc_reports",
+          "subservice_organizations"
+        ],
+        "source_system": "Firm client database",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "soc_accept_2",
+    "procedure_id": "engagement_acceptance",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Engagement terms and prior SOC reports",
+        "scope": "",
+        "fields": [
+          "report_type",
+          "trust_services_categories",
+          "reporting_period",
+          "intended_users"
+        ],
+        "source_system": "",
+        "format": "Prior SOC 2 report",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "soc_accept_3",
+    "procedure_id": "engagement_acceptance",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "system_documentation",
+        "name": "Service organization readiness assessment",
+        "scope": "",
+        "fields": [
+          "system_description_availability",
+          "management_assertion_status",
+          "control_documentation_maturity"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "scope_1",
+    "procedure_id": "scope_determination",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "system_documentation",
+        "name": "System boundary documentation",
+        "scope": "All in-scope systems",
+        "fields": [
+          "infrastructure_components",
+          "software_applications",
+          "data_stores",
+          "network_topology",
+          "personnel_roles"
+        ],
+        "source_system": "CMDB/IT asset management",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "system_documentation",
+        "name": "System description draft",
+        "scope": "",
+        "fields": [
+          "system_boundaries",
+          "service_commitments",
+          "system_requirements"
+        ],
+        "source_system": "",
+        "format": "Management-prepared narrative",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "completeness_check",
+        "name": "System boundary completeness analysis",
+        "description": "Verify all in-scope infrastructure, software, data, and personnel are identified against the service organization's system description",
+        "input_data": [
+          "System boundary documentation",
+          "CMDB inventory"
+        ],
+        "data_features": [
+          "component_type",
+          "service_relevance",
+          "boundary_inclusion"
+        ],
+        "graph_features": [],
+        "expected_output": "Completeness assessment of in-scope system components",
+        "threshold": "",
+        "tool_hint": "Cross-reference CMDB assets with declared system boundaries"
+      }
+    ]
+  },
+  {
+    "step_id": "scope_2",
+    "procedure_id": "scope_determination",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Trust services criteria mapping",
+        "scope": "",
+        "fields": [
+          "trust_category",
+          "criteria_reference",
+          "control_objectives",
+          "applicable_controls"
+        ],
+        "source_system": "",
+        "format": "Control matrix",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "scope_3",
+    "procedure_id": "scope_determination",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Control matrix (criteria-to-control mapping)",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "control_description",
+          "criteria_mapped",
+          "control_type",
+          "control_owner"
+        ],
+        "source_system": "GRC platform",
+        "format": "Structured matrix",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "completeness_check",
+        "name": "Criteria coverage analysis",
+        "description": "Verify all applicable trust services criteria are addressed by at least one control in the control matrix",
+        "input_data": [
+          "Control matrix"
+        ],
+        "data_features": [
+          "criteria_reference",
+          "mapped_controls_count"
+        ],
+        "graph_features": [],
+        "expected_output": "Gap analysis of unmapped criteria",
+        "threshold": "100% criteria coverage",
+        "tool_hint": "Pivot table of criteria vs. controls with gap flagging"
+      }
+    ]
+  },
+  {
+    "step_id": "scope_4",
+    "procedure_id": "scope_determination",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Reporting period and testing timeline",
+        "scope": "",
+        "fields": [
+          "period_start_date",
+          "period_end_date",
+          "interim_testing_dates",
+          "roll_forward_period"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "desc_eval_1",
+    "procedure_id": "description_evaluation",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "system_documentation",
+        "name": "Management's system description",
+        "scope": "Full reporting period",
+        "fields": [
+          "infrastructure",
+          "software",
+          "people",
+          "procedures",
+          "data",
+          "service_commitments"
+        ],
+        "source_system": "",
+        "format": "Narrative document",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "completeness_check",
+        "name": "Description criteria compliance assessment",
+        "description": "Evaluate the system description against AT-C 320 description criteria for completeness and accuracy",
+        "input_data": [
+          "Management's system description"
+        ],
+        "data_features": [
+          "description_section",
+          "criteria_requirement",
+          "compliance_status"
+        ],
+        "graph_features": [],
+        "expected_output": "Compliance checklist of description criteria with pass/fail",
+        "threshold": "",
+        "tool_hint": "Checklist comparison against AT-C 320 description criteria"
+      }
+    ]
+  },
+  {
+    "step_id": "desc_eval_2",
+    "procedure_id": "description_evaluation",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "system_documentation",
+        "name": "Management's system description",
+        "scope": "",
+        "fields": [
+          "principal_service_commitments",
+          "system_requirements",
+          "system_components",
+          "system_boundaries"
+        ],
+        "source_system": "",
+        "format": "Narrative document",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "desc_eval_3",
+    "procedure_id": "description_evaluation",
+    "phase": "engagement_setup",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Control matrix and CUEC listing",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "control_description",
+          "criteria_mapped",
+          "cuec_references",
+          "subservice_org_controls"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "sec_test_1",
+    "procedure_id": "security_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Security controls from control matrix (CC1-CC9)",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "control_description",
+          "cc_criteria",
+          "control_type",
+          "control_frequency"
+        ],
+        "source_system": "GRC platform",
+        "format": "Control matrix extract",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "sec_test_2",
+    "procedure_id": "security_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "Access logs and change management records",
+        "scope": "Full reporting period",
+        "fields": [
+          "user_id",
+          "action_type",
+          "timestamp",
+          "resource_accessed",
+          "change_ticket_id"
+        ],
+        "source_system": "IAM/ITSM systems",
+        "format": "System logs",
+        "frequency": "continuous",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "sampling",
+        "name": "Security control sample selection",
+        "description": "Design test approach and sample sizes for security controls based on control frequency and risk assessment",
+        "input_data": [
+          "Control matrix"
+        ],
+        "data_features": [
+          "control_frequency",
+          "population_size",
+          "risk_level"
+        ],
+        "graph_features": [],
+        "expected_output": "Sample selection methodology and sample sizes per control",
+        "threshold": "",
+        "tool_hint": "Apply AICPA sample size guidance for operating effectiveness testing"
+      }
+    ]
+  },
+  {
+    "step_id": "sec_test_3",
+    "procedure_id": "security_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "Security control evidence",
+        "scope": "Reporting period",
+        "fields": [
+          "access_control_configs",
+          "authentication_settings",
+          "encryption_configurations",
+          "change_management_tickets",
+          "monitoring_alerts"
+        ],
+        "source_system": "IAM/SIEM/ITSM",
+        "format": "System screenshots and exports",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "it_data",
+        "name": "Vulnerability scan results",
+        "scope": "Reporting period",
+        "fields": [
+          "scan_date",
+          "vulnerability_severity",
+          "affected_system",
+          "remediation_status",
+          "remediation_date"
+        ],
+        "source_system": "Vulnerability scanner",
+        "format": "Scan report export",
+        "frequency": "quarterly",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Anomalous access pattern detection",
+        "description": "Identify unusual access events such as off-hours logins, privilege escalations, or access from anomalous locations during the reporting period",
+        "input_data": [
+          "Access logs"
+        ],
+        "data_features": [
+          "login_timestamp",
+          "user_role",
+          "source_ip",
+          "action_type"
+        ],
+        "graph_features": [],
+        "expected_output": "List of anomalous access events requiring investigation",
+        "threshold": ">2 standard deviations from baseline",
+        "tool_hint": "Statistical outlier detection on access event time series"
+      },
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Security incident trend analysis",
+        "description": "Analyze trends in security incidents and vulnerabilities over the reporting period to assess control effectiveness trajectory",
+        "input_data": [
+          "Incident logs",
+          "Vulnerability scan results"
+        ],
+        "data_features": [
+          "incident_date",
+          "severity",
+          "incident_type",
+          "time_to_resolve"
+        ],
+        "graph_features": [],
+        "expected_output": "Trend charts showing incident frequency and severity over the period",
+        "threshold": "",
+        "tool_hint": "Time series visualization of incident counts by severity"
+      }
+    ]
+  },
+  {
+    "step_id": "sec_test_4",
+    "procedure_id": "security_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Security controls test results",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "test_date",
+          "test_result",
+          "exception_description",
+          "compensating_control"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "sec_test_5",
+    "procedure_id": "security_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Exception documentation",
+        "scope": "",
+        "fields": [
+          "exception_id",
+          "control_id",
+          "deviation_nature",
+          "affected_criteria",
+          "exception_period",
+          "management_response"
+        ],
+        "source_system": "",
+        "format": "Exception log",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "avail_test_1",
+    "procedure_id": "availability_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Availability controls from control matrix (A1)",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "control_description",
+          "availability_criteria",
+          "control_type"
+        ],
+        "source_system": "GRC platform",
+        "format": "Control matrix extract",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "avail_test_2",
+    "procedure_id": "availability_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "Uptime metrics and SLA reports",
+        "scope": "Full reporting period",
+        "fields": [
+          "system_name",
+          "uptime_percentage",
+          "sla_target",
+          "downtime_incidents",
+          "planned_maintenance_windows"
+        ],
+        "source_system": "Monitoring platform",
+        "format": "SLA dashboard export",
+        "frequency": "monthly",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "System availability trend analysis",
+        "description": "Analyze uptime metrics over the reporting period to identify availability degradation patterns",
+        "input_data": [
+          "Uptime metrics"
+        ],
+        "data_features": [
+          "uptime_percentage",
+          "measurement_period",
+          "system_name"
+        ],
+        "graph_features": [],
+        "expected_output": "Trend chart of availability metrics by system with SLA threshold overlay",
+        "threshold": "SLA target (typically 99.9%+)",
+        "tool_hint": "Time series chart with SLA breach highlighting"
+      }
+    ]
+  },
+  {
+    "step_id": "avail_test_3",
+    "procedure_id": "availability_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "DR test results and incident response logs",
+        "scope": "Reporting period",
+        "fields": [
+          "dr_test_date",
+          "rto_achieved",
+          "rpo_achieved",
+          "backup_restore_results",
+          "failover_test_outcome"
+        ],
+        "source_system": "DR management",
+        "format": "Test report",
+        "frequency": "per DR test",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "variance_analysis",
+        "name": "RTO/RPO variance analysis",
+        "description": "Compare actual recovery times to target RTO/RPO to assess disaster recovery control effectiveness",
+        "input_data": [
+          "DR test results"
+        ],
+        "data_features": [
+          "target_rto",
+          "actual_rto",
+          "target_rpo",
+          "actual_rpo"
+        ],
+        "graph_features": [],
+        "expected_output": "Variance report of actual vs. target recovery metrics",
+        "threshold": "RTO/RPO targets defined in DR plan",
+        "tool_hint": "Bar chart comparing target vs. actual recovery metrics"
+      }
+    ]
+  },
+  {
+    "step_id": "avail_test_4",
+    "procedure_id": "availability_controls_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Availability controls test results",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "test_result",
+          "exceptions_noted"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "pi_test_1",
+    "procedure_id": "processing_integrity_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Processing integrity controls from control matrix (PI1)",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "control_description",
+          "pi_criteria",
+          "control_type"
+        ],
+        "source_system": "GRC platform",
+        "format": "Control matrix extract",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "pi_test_2",
+    "procedure_id": "processing_integrity_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "Transaction processing data",
+        "scope": "Reporting period",
+        "fields": [
+          "transaction_volume",
+          "error_rates",
+          "data_flow_complexity",
+          "automated_control_count"
+        ],
+        "source_system": "Application systems",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "pi_test_3",
+    "procedure_id": "processing_integrity_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "Transaction logs and reconciliation data",
+        "scope": "Reporting period",
+        "fields": [
+          "transaction_id",
+          "input_values",
+          "output_values",
+          "processing_timestamp",
+          "validation_result"
+        ],
+        "source_system": "Application systems",
+        "format": "Transaction log export",
+        "frequency": "continuous",
+        "assertion": ""
+      },
+      {
+        "data_type": "reconciliation_data",
+        "name": "System reconciliation reports",
+        "scope": "Reporting period",
+        "fields": [
+          "reconciliation_date",
+          "source_total",
+          "target_total",
+          "variance",
+          "resolution_status"
+        ],
+        "source_system": "Reconciliation system",
+        "format": "",
+        "frequency": "daily",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "three_way_match",
+        "name": "Input/output/reconciliation three-way match",
+        "description": "Match transaction inputs to outputs and reconciliation totals to verify processing completeness and accuracy",
+        "input_data": [
+          "Transaction logs",
+          "Reconciliation reports"
+        ],
+        "data_features": [
+          "input_total",
+          "output_total",
+          "reconciliation_total",
+          "variance"
+        ],
+        "graph_features": [],
+        "expected_output": "Three-way match results with unreconciled items flagged",
+        "threshold": "Zero unresolved variance",
+        "tool_hint": "Join transaction summaries with reconciliation data and flag mismatches"
+      },
+      {
+        "procedure_type": "completeness_check",
+        "name": "Transaction processing completeness verification",
+        "description": "Verify that all transactions initiated are processed through to completion without loss",
+        "input_data": [
+          "Transaction logs"
+        ],
+        "data_features": [
+          "transaction_status",
+          "processing_stage",
+          "error_flag"
+        ],
+        "graph_features": [],
+        "expected_output": "Count of incomplete or errored transactions",
+        "threshold": "< 0.1% error rate",
+        "tool_hint": "Count transactions by processing status, flag incomplete"
+      }
+    ]
+  },
+  {
+    "step_id": "pi_test_4",
+    "procedure_id": "processing_integrity_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Processing integrity test results",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "test_result",
+          "exceptions_noted"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "conf_test_1",
+    "procedure_id": "confidentiality_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Confidentiality controls from control matrix (C1)",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "control_description",
+          "confidentiality_criteria",
+          "control_type"
+        ],
+        "source_system": "GRC platform",
+        "format": "Control matrix extract",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "conf_test_2",
+    "procedure_id": "confidentiality_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "Data classification and encryption configurations",
+        "scope": "",
+        "fields": [
+          "data_classification_level",
+          "encryption_algorithm",
+          "key_management_practice",
+          "data_lifecycle_stage"
+        ],
+        "source_system": "DLP/encryption management",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "conf_test_3",
+    "procedure_id": "confidentiality_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "it_data",
+        "name": "Access control lists and DLP policy logs",
+        "scope": "Reporting period",
+        "fields": [
+          "resource_name",
+          "access_permissions",
+          "dlp_policy_violations",
+          "disposal_records"
+        ],
+        "source_system": "IAM/DLP systems",
+        "format": "System exports",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "sampling",
+        "name": "Confidentiality control sample testing",
+        "description": "Select samples from data encryption configurations, access controls, and secure disposal records to test operating effectiveness",
+        "input_data": [
+          "Access control lists",
+          "DLP policy logs"
+        ],
+        "data_features": [
+          "control_instance",
+          "compliance_status"
+        ],
+        "graph_features": [],
+        "expected_output": "Sample test results with exception rate",
+        "threshold": "0% exception rate for critical controls",
+        "tool_hint": "Random sample selection from control evidence population"
+      }
+    ]
+  },
+  {
+    "step_id": "conf_test_4",
+    "procedure_id": "confidentiality_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Confidentiality controls test results",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "test_result",
+          "exceptions_noted"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "priv_test_1",
+    "procedure_id": "privacy_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "control_documentation",
+        "name": "Privacy controls from control matrix (P1)",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "control_description",
+          "privacy_criteria",
+          "control_type"
+        ],
+        "source_system": "GRC platform",
+        "format": "Control matrix extract",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "priv_test_2",
+    "procedure_id": "privacy_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "privacy_documentation",
+        "name": "Privacy regulation applicability and data inventory",
+        "scope": "",
+        "fields": [
+          "applicable_regulations",
+          "personal_data_categories",
+          "data_subject_types",
+          "data_sensitivity_level",
+          "processing_purposes"
+        ],
+        "source_system": "Privacy management platform",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "priv_test_3",
+    "procedure_id": "privacy_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "privacy_documentation",
+        "name": "Consent records and data retention logs",
+        "scope": "Reporting period",
+        "fields": [
+          "consent_date",
+          "consent_type",
+          "data_subject_id",
+          "retention_period",
+          "deletion_status"
+        ],
+        "source_system": "Consent management platform",
+        "format": "",
+        "frequency": "continuous",
+        "assertion": ""
+      },
+      {
+        "data_type": "it_data",
+        "name": "Privacy incident logs and DSAR records",
+        "scope": "Reporting period",
+        "fields": [
+          "incident_date",
+          "incident_type",
+          "data_subjects_affected",
+          "dsar_response_time",
+          "dsar_completion_status"
+        ],
+        "source_system": "Privacy management platform",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "completeness_check",
+        "name": "Privacy controls coverage analysis",
+        "description": "Verify privacy notice delivery, consent collection completeness, and data retention policy enforcement across all data subjects",
+        "input_data": [
+          "Consent records",
+          "Data retention logs"
+        ],
+        "data_features": [
+          "consent_coverage_rate",
+          "retention_compliance_rate",
+          "dsar_response_timeliness"
+        ],
+        "graph_features": [],
+        "expected_output": "Compliance rates for consent, retention, and DSAR handling",
+        "threshold": "100% consent coverage; DSAR response within regulatory timelines",
+        "tool_hint": "Calculate compliance percentages from consent and DSAR records"
+      }
+    ]
+  },
+  {
+    "step_id": "priv_test_4",
+    "procedure_id": "privacy_testing",
+    "phase": "controls_testing",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Privacy controls test results",
+        "scope": "",
+        "fields": [
+          "control_id",
+          "test_result",
+          "exceptions_noted"
+        ],
+        "source_system": "",
+        "format": "Workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "cuec_1",
+    "procedure_id": "complementary_user_controls",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "system_documentation",
+        "name": "CUEC listing from system description",
+        "scope": "",
+        "fields": [
+          "cuec_id",
+          "cuec_description",
+          "applicable_criteria",
+          "user_entity_responsibility"
+        ],
+        "source_system": "",
+        "format": "System description extract",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "cuec_2",
+    "procedure_id": "complementary_user_controls",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "system_documentation",
+        "name": "System description and CUEC evaluation",
+        "scope": "",
+        "fields": [
+          "cuec_id",
+          "design_suitability",
+          "description_accuracy"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "except_eval_1",
+    "procedure_id": "exception_evaluation",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Exception log and all test results",
+        "scope": "All trust services categories",
+        "fields": [
+          "exception_id",
+          "trust_category",
+          "control_id",
+          "deviation_nature",
+          "frequency_of_deviation",
+          "exception_period"
+        ],
+        "source_system": "",
+        "format": "Exception log workpaper",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "stratification",
+        "name": "Exception stratification by trust category",
+        "description": "Stratify exceptions by trust services category, severity, and frequency to identify systemic patterns vs. isolated incidents",
+        "input_data": [
+          "Exception log"
+        ],
+        "data_features": [
+          "trust_category",
+          "exception_severity",
+          "exception_frequency",
+          "control_type"
+        ],
+        "graph_features": [],
+        "expected_output": "Exception distribution by category with systemic/isolated classification",
+        "threshold": "",
+        "tool_hint": "Pivot table of exceptions by category and severity level"
+      },
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Exception timing analysis",
+        "description": "Analyze whether exceptions cluster at specific points during the reporting period, indicating temporal control failures",
+        "input_data": [
+          "Exception log"
+        ],
+        "data_features": [
+          "exception_date",
+          "trust_category"
+        ],
+        "graph_features": [],
+        "expected_output": "Time distribution of exceptions with clustering analysis",
+        "threshold": "",
+        "tool_hint": "Histogram of exceptions over the reporting period"
+      }
+    ]
+  },
+  {
+    "step_id": "except_eval_2",
+    "procedure_id": "exception_evaluation",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Exception root cause analysis data",
+        "scope": "",
+        "fields": [
+          "exception_id",
+          "root_cause",
+          "compensating_controls",
+          "impact_on_criteria"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "except_eval_3",
+    "procedure_id": "exception_evaluation",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Aggregated exception impact assessment",
+        "scope": "",
+        "fields": [
+          "trust_category",
+          "total_exceptions",
+          "systemic_flag",
+          "opinion_impact"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "assert_rev_1",
+    "procedure_id": "management_assertion_review",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "management_documentation",
+        "name": "Management's written assertion",
+        "scope": "",
+        "fields": [
+          "assertion_date",
+          "description_compliance",
+          "design_suitability",
+          "operating_effectiveness",
+          "reporting_period_covered"
+        ],
+        "source_system": "",
+        "format": "Signed document",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "assert_rev_2",
+    "procedure_id": "management_assertion_review",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Exception log for consistency check",
+        "scope": "",
+        "fields": [
+          "exception_id",
+          "trust_category",
+          "management_response"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "soc_opinion_1",
+    "procedure_id": "form_soc_opinion",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Aggregated test results across all trust categories",
+        "scope": "",
+        "fields": [
+          "trust_category",
+          "controls_tested",
+          "exceptions_count",
+          "evidence_sufficiency"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "soc_opinion_2",
+    "procedure_id": "form_soc_opinion",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "test_results",
+        "name": "Opinion formation inputs",
+        "scope": "",
+        "fields": [
+          "description_fairness",
+          "design_suitability",
+          "operating_effectiveness",
+          "exception_materiality"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "soc_opinion_3",
+    "procedure_id": "form_soc_opinion",
+    "phase": "evaluation_and_reporting",
+    "data_requirements": [
+      {
+        "data_type": "report_components",
+        "name": "SOC 2 Type II report components",
+        "scope": "",
+        "fields": [
+          "opinion_type",
+          "system_description",
+          "management_assertion",
+          "tests_and_results",
+          "other_information"
+        ],
+        "source_system": "",
+        "format": "Final report",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  }
+]

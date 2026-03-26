@@ -1,0 +1,1309 @@
+[
+  {
+    "step_id": "scope_step_1",
+    "procedure_id": "risk_scoping",
+    "phase": "pre_examination",
+    "data_requirements": [
+      {
+        "data_type": "supervisory",
+        "name": "Prior Report of Examination and MRA tracking",
+        "scope": "Prior 1-3 examination cycles",
+        "fields": [
+          "prior_camels_rating",
+          "outstanding_mras",
+          "mria_items",
+          "remediation_status",
+          "supervisory_history"
+        ],
+        "source_system": "Supervisory database",
+        "format": "Prior ROE",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Supervisory findings trend analysis",
+        "description": "Analyze trends in prior examination findings, MRA resolution rates, and recurring issues across examination cycles",
+        "input_data": [
+          "Prior exam reports"
+        ],
+        "data_features": [
+          "finding_type",
+          "finding_year",
+          "resolution_status",
+          "recurrence_flag"
+        ],
+        "graph_features": [],
+        "expected_output": "Multi-cycle trend of findings with resolution tracking",
+        "threshold": "",
+        "tool_hint": "Time series of findings by category with resolution overlay"
+      }
+    ]
+  },
+  {
+    "step_id": "scope_step_2",
+    "procedure_id": "risk_scoping",
+    "phase": "pre_examination",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Call report financial data and peer comparisons",
+        "scope": "Trailing 8 quarters",
+        "fields": [
+          "total_assets",
+          "total_loans",
+          "total_deposits",
+          "net_income",
+          "capital_ratios",
+          "npl_ratio",
+          "nim",
+          "efficiency_ratio"
+        ],
+        "source_system": "Call Report / UBPR",
+        "format": "Regulatory filing extract",
+        "frequency": "quarterly",
+        "assertion": ""
+      },
+      {
+        "data_type": "peer_data",
+        "name": "Peer group comparison data",
+        "scope": "",
+        "fields": [
+          "peer_group_id",
+          "peer_median",
+          "peer_25th_percentile",
+          "peer_75th_percentile"
+        ],
+        "source_system": "FFIEC UBPR",
+        "format": "",
+        "frequency": "quarterly",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Financial ratio peer comparison",
+        "description": "Compare institution financial ratios against peer group medians and interquartile ranges to identify areas of elevated risk",
+        "input_data": [
+          "Call report data",
+          "Peer group data"
+        ],
+        "data_features": [
+          "capital_ratios",
+          "npl_ratio",
+          "nim",
+          "efficiency_ratio",
+          "liquidity_ratio"
+        ],
+        "graph_features": [],
+        "expected_output": "Peer comparison dashboard with outlier identification",
+        "threshold": "Below 25th percentile or above 75th percentile",
+        "tool_hint": "Box plot of key ratios vs. peer distribution"
+      },
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Call report anomaly detection",
+        "description": "Identify statistical outliers in call report data that may indicate unusual financial trends or reporting issues",
+        "input_data": [
+          "Call report data"
+        ],
+        "data_features": [
+          "quarter_over_quarter_change",
+          "ratio_deviation_from_peer"
+        ],
+        "graph_features": [],
+        "expected_output": "List of anomalous data points requiring focused examination",
+        "threshold": ">2 standard deviations from historical trend",
+        "tool_hint": "Z-score analysis on quarterly financial metrics"
+      }
+    ]
+  },
+  {
+    "step_id": "scope_step_3",
+    "procedure_id": "risk_scoping",
+    "phase": "pre_examination",
+    "data_requirements": [
+      {
+        "data_type": "supervisory",
+        "name": "Examination scope and risk focus determination",
+        "scope": "",
+        "fields": [
+          "risk_focus_areas",
+          "module_assignments",
+          "time_budgets",
+          "supervisory_strategy"
+        ],
+        "source_system": "",
+        "format": "Scope memorandum",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "docreq_step_1",
+    "procedure_id": "document_request",
+    "phase": "pre_examination",
+    "data_requirements": [
+      {
+        "data_type": "institutional",
+        "name": "Document request list items",
+        "scope": "",
+        "fields": [
+          "board_minutes",
+          "committee_minutes",
+          "mis_reports",
+          "policies_and_procedures",
+          "internal_audit_reports",
+          "financial_schedules"
+        ],
+        "source_system": "",
+        "format": "Document request template",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "docreq_step_2",
+    "procedure_id": "document_request",
+    "phase": "pre_examination",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Institution contact and logistics data",
+        "scope": "",
+        "fields": [
+          "examination_liaison",
+          "on_site_start_date",
+          "workspace_arrangements"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "mgmt_step_1",
+    "procedure_id": "management_assessment",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "governance",
+        "name": "Board of directors meeting minutes and governance data",
+        "scope": "Since prior examination",
+        "fields": [
+          "meeting_dates",
+          "attendance_records",
+          "director_qualifications",
+          "key_decisions",
+          "risk_oversight_actions"
+        ],
+        "source_system": "Board secretary records",
+        "format": "Meeting minutes",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "mgmt_step_2",
+    "procedure_id": "management_assessment",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "governance",
+        "name": "Senior management quality data",
+        "scope": "",
+        "fields": [
+          "strategic_plan",
+          "risk_appetite_framework",
+          "succession_plan",
+          "regulatory_response_tracking"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "mgmt_step_3",
+    "procedure_id": "management_assessment",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "governance",
+        "name": "Internal audit function data",
+        "scope": "",
+        "fields": [
+          "audit_independence",
+          "audit_scope_coverage",
+          "audit_staffing",
+          "findings_resolution_rate"
+        ],
+        "source_system": "Internal audit department",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "aq_step_1",
+    "procedure_id": "asset_quality_review",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "loan_data",
+        "name": "Loan portfolio data for sample selection",
+        "scope": "As of examination date",
+        "fields": [
+          "loan_id",
+          "loan_type",
+          "outstanding_balance",
+          "delinquency_status",
+          "risk_rating",
+          "borrower_financials",
+          "collateral_type"
+        ],
+        "source_system": "Loan origination/servicing system",
+        "format": "Loan portfolio extract",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "stratification",
+        "name": "Loan portfolio stratification for sample selection",
+        "description": "Stratify the loan portfolio by loan type, delinquency status, risk rating, and size to design a risk-focused sample",
+        "input_data": [
+          "Loan portfolio data"
+        ],
+        "data_features": [
+          "loan_type",
+          "delinquency_bucket",
+          "risk_rating",
+          "outstanding_balance"
+        ],
+        "graph_features": [],
+        "expected_output": "Stratified loan population with sample selections by stratum",
+        "threshold": "",
+        "tool_hint": "Pivot table with stratification by type/delinquency/rating; sample from each tier"
+      }
+    ]
+  },
+  {
+    "step_id": "aq_step_2",
+    "procedure_id": "asset_quality_review",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "loan_data",
+        "name": "Individual loan files for credit review",
+        "scope": "Sampled loans",
+        "fields": [
+          "borrower_financial_statements",
+          "underwriting_documentation",
+          "collateral_appraisals",
+          "covenant_compliance",
+          "payment_history"
+        ],
+        "source_system": "Loan file repository",
+        "format": "Loan file documents",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Credit quality outlier identification",
+        "description": "Identify loans with adverse financial trends, covenant violations, or excessive delinquency relative to assigned risk rating",
+        "input_data": [
+          "Loan portfolio data"
+        ],
+        "data_features": [
+          "debt_service_coverage",
+          "loan_to_value",
+          "days_past_due",
+          "current_risk_rating"
+        ],
+        "graph_features": [],
+        "expected_output": "Flagged loans with risk-rating inconsistencies requiring targeted review",
+        "threshold": "DSCR < 1.0, LTV > 90%, or 90+ DPD with Pass rating",
+        "tool_hint": "Multi-criteria filter flagging loans with adverse indicators but benign ratings"
+      }
+    ]
+  },
+  {
+    "step_id": "aq_step_3",
+    "procedure_id": "asset_quality_review",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "ALLL/CECL reserve and charge-off data",
+        "scope": "Trailing 8 quarters",
+        "fields": [
+          "alll_balance",
+          "provision_expense",
+          "net_charge_offs",
+          "classified_assets",
+          "reserve_coverage_ratio"
+        ],
+        "source_system": "GL/Call Report",
+        "format": "",
+        "frequency": "quarterly",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Asset quality trend analysis",
+        "description": "Analyze trends in classified assets, charge-offs, and reserve coverage ratios to assess trajectory of asset quality",
+        "input_data": [
+          "ALLL/CECL data",
+          "Classified assets data"
+        ],
+        "data_features": [
+          "npl_ratio",
+          "net_charge_off_rate",
+          "reserve_to_npl_ratio",
+          "classified_to_capital_ratio"
+        ],
+        "graph_features": [],
+        "expected_output": "Asset quality trend charts with peer benchmarking",
+        "threshold": "Adverse peer comparison or deteriorating trend",
+        "tool_hint": "Multi-period line charts with peer overlay; flag deteriorating trends"
+      }
+    ]
+  },
+  {
+    "step_id": "earn_step_1",
+    "procedure_id": "earnings_analysis",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Income statement and earnings quality data",
+        "scope": "Trailing 8 quarters",
+        "fields": [
+          "net_interest_income",
+          "non_interest_income",
+          "non_interest_expense",
+          "provision_expense",
+          "net_income",
+          "average_earning_assets"
+        ],
+        "source_system": "Call Report / GL",
+        "format": "",
+        "frequency": "quarterly",
+        "assertion": ""
+      },
+      {
+        "data_type": "peer_data",
+        "name": "Peer earnings benchmarks",
+        "scope": "",
+        "fields": [
+          "peer_nim",
+          "peer_efficiency_ratio",
+          "peer_roa",
+          "peer_roe"
+        ],
+        "source_system": "FFIEC UBPR",
+        "format": "",
+        "frequency": "quarterly",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Earnings profitability ratio analysis",
+        "description": "Calculate NIM, efficiency ratio, ROA, and ROE and compare against peer benchmarks to assess earnings quality and sustainability",
+        "input_data": [
+          "Income statement data",
+          "Peer benchmarks"
+        ],
+        "data_features": [
+          "nim",
+          "efficiency_ratio",
+          "roa",
+          "roe",
+          "fee_income_ratio"
+        ],
+        "graph_features": [],
+        "expected_output": "Earnings ratio dashboard with peer comparison",
+        "threshold": "",
+        "tool_hint": "Calculate ratios; benchmark against peer quartiles"
+      },
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Earnings trend and composition analysis",
+        "description": "Analyze earnings trends over time and the composition of interest vs. non-interest income to assess sustainability",
+        "input_data": [
+          "Income statement data"
+        ],
+        "data_features": [
+          "quarter",
+          "net_interest_income",
+          "fee_income",
+          "trading_income",
+          "non_recurring_items"
+        ],
+        "graph_features": [],
+        "expected_output": "Stacked earnings composition chart with trend lines",
+        "threshold": "",
+        "tool_hint": "Stacked bar chart of earnings components by quarter"
+      },
+      {
+        "procedure_type": "regression",
+        "name": "NIM sensitivity regression",
+        "description": "Regress NIM against interest rate environment to assess earnings sensitivity to rate changes",
+        "input_data": [
+          "NIM data",
+          "Interest rate data"
+        ],
+        "data_features": [
+          "nim",
+          "fed_funds_rate",
+          "yield_curve_slope"
+        ],
+        "graph_features": [],
+        "expected_output": "NIM-rate sensitivity coefficient with forecast under rate scenarios",
+        "threshold": "",
+        "tool_hint": "OLS regression of NIM on rate factors with scenario projections"
+      }
+    ]
+  },
+  {
+    "step_id": "earn_step_2",
+    "procedure_id": "earnings_analysis",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Budget variance and provisioning impact data",
+        "scope": "",
+        "fields": [
+          "budget_net_income",
+          "actual_net_income",
+          "budget_variance",
+          "provision_impact_on_earnings",
+          "classified_asset_impact"
+        ],
+        "source_system": "Management reporting",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "sens_step_1",
+    "procedure_id": "sensitivity_to_market_risk",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "risk_data",
+        "name": "Interest rate risk model outputs",
+        "scope": "",
+        "fields": [
+          "eve_base",
+          "eve_up_200bp",
+          "eve_down_200bp",
+          "nii_base",
+          "nii_up_200bp",
+          "nii_down_200bp",
+          "model_assumptions"
+        ],
+        "source_system": "ALM system",
+        "format": "ALM report",
+        "frequency": "quarterly",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "IRR exposure ratio analysis",
+        "description": "Compare EVE and NII sensitivity metrics against board-approved policy limits and peer benchmarks",
+        "input_data": [
+          "IRR model outputs"
+        ],
+        "data_features": [
+          "eve_change_pct",
+          "nii_change_pct",
+          "policy_limit",
+          "peer_benchmark"
+        ],
+        "graph_features": [],
+        "expected_output": "IRR exposure summary with policy limit comparison",
+        "threshold": "Board-approved EVE/NII policy limits",
+        "tool_hint": "Bar chart of rate scenario impacts with policy limit overlay"
+      }
+    ]
+  },
+  {
+    "step_id": "sens_step_2",
+    "procedure_id": "sensitivity_to_market_risk",
+    "phase": "on_site_examination",
+    "data_requirements": [
+      {
+        "data_type": "risk_data",
+        "name": "Investment portfolio and derivatives data",
+        "scope": "",
+        "fields": [
+          "security_type",
+          "market_value",
+          "duration",
+          "unrealized_gains_losses",
+          "hedging_instruments"
+        ],
+        "source_system": "Investment/treasury system",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "bsa_step_1",
+    "procedure_id": "bsa_compliance_review",
+    "phase": "bsa_aml_review",
+    "data_requirements": [
+      {
+        "data_type": "compliance",
+        "name": "BSA/AML program documentation",
+        "scope": "",
+        "fields": [
+          "bsa_policy",
+          "internal_controls_description",
+          "independent_testing_reports",
+          "bsa_officer_qualifications",
+          "training_records",
+          "cdd_procedures"
+        ],
+        "source_system": "Compliance department",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "bsa_step_2",
+    "procedure_id": "bsa_compliance_review",
+    "phase": "bsa_aml_review",
+    "data_requirements": [
+      {
+        "data_type": "transaction_data",
+        "name": "SAR/CTR filing data and transaction monitoring",
+        "scope": "Since prior examination",
+        "fields": [
+          "sar_filing_date",
+          "sar_amount",
+          "sar_subject",
+          "ctr_count",
+          "ctr_exemptions",
+          "monitoring_alert_volume",
+          "alert_disposition"
+        ],
+        "source_system": "BSA/AML monitoring system",
+        "format": "Filing data extract",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "journal_entry_testing",
+        "name": "Suspicious transaction pattern detection",
+        "description": "Analyze transaction data for structuring patterns, round-dollar CTR avoidance, and unusual transaction sequences indicative of money laundering",
+        "input_data": [
+          "Transaction monitoring data"
+        ],
+        "data_features": [
+          "transaction_amount",
+          "transaction_date",
+          "customer_id",
+          "transaction_type",
+          "cumulative_daily_total"
+        ],
+        "graph_features": [],
+        "expected_output": "Flagged transactions with structuring/layering risk scores",
+        "threshold": "Transactions just below $10,000 CTR threshold",
+        "tool_hint": "Cluster transactions by customer/date; flag sub-threshold clustering"
+      },
+      {
+        "procedure_type": "outlier_detection",
+        "name": "SAR filing outlier analysis",
+        "description": "Identify outlier patterns in SAR filing volumes, timeliness, and subject demographics that may indicate monitoring gaps",
+        "input_data": [
+          "SAR filing data"
+        ],
+        "data_features": [
+          "filing_volume_by_month",
+          "days_to_file",
+          "sar_type_distribution"
+        ],
+        "graph_features": [],
+        "expected_output": "SAR filing analytics with timeliness and volume anomaly detection",
+        "threshold": "SAR filing timeliness: within 30 days of detection",
+        "tool_hint": "Time series of SAR volumes; histogram of filing latency"
+      }
+    ]
+  },
+  {
+    "step_id": "bsa_step_3",
+    "procedure_id": "bsa_compliance_review",
+    "phase": "bsa_aml_review",
+    "data_requirements": [
+      {
+        "data_type": "compliance",
+        "name": "CDD/Beneficial Ownership and OFAC data",
+        "scope": "",
+        "fields": [
+          "cdd_file_completeness",
+          "beneficial_ownership_records",
+          "customer_risk_ratings",
+          "sanctions_screening_config",
+          "ofac_alert_disposition"
+        ],
+        "source_system": "KYC/CDD system",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "sampling",
+        "name": "CDD file sample review",
+        "description": "Select a risk-based sample of CDD files to assess documentation completeness and risk rating accuracy",
+        "input_data": [
+          "Customer CDD records"
+        ],
+        "data_features": [
+          "customer_risk_rating",
+          "cdd_last_update",
+          "documentation_completeness"
+        ],
+        "graph_features": [],
+        "expected_output": "Sample results with CDD deficiency rate",
+        "threshold": "",
+        "tool_hint": "Stratified sample by risk tier; assess completeness per FinCEN requirements"
+      }
+    ]
+  },
+  {
+    "step_id": "liq_step_1",
+    "procedure_id": "liquidity_assessment",
+    "phase": "capital_adequacy",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Funding structure and liquidity data",
+        "scope": "Trailing 8 quarters",
+        "fields": [
+          "core_deposits",
+          "wholesale_funding",
+          "brokered_deposits",
+          "fhlb_borrowings",
+          "maturity_profile",
+          "available_collateral"
+        ],
+        "source_system": "Treasury/ALM system",
+        "format": "",
+        "frequency": "quarterly",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Funding composition trend analysis",
+        "description": "Analyze trends in funding composition, concentration risk, and reliance on wholesale or brokered deposits",
+        "input_data": [
+          "Funding structure data"
+        ],
+        "data_features": [
+          "core_deposit_ratio",
+          "wholesale_funding_ratio",
+          "brokered_deposit_concentration",
+          "funding_cost"
+        ],
+        "graph_features": [],
+        "expected_output": "Funding composition trend chart with concentration metrics",
+        "threshold": "Brokered deposits > 10% of total deposits",
+        "tool_hint": "Stacked area chart of funding sources; flag concentration breaches"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Liquidity ratio analysis",
+        "description": "Calculate and benchmark liquidity ratios including net non-core funding dependence, loan-to-deposit ratio, and liquid asset coverage",
+        "input_data": [
+          "Funding data",
+          "Peer benchmarks"
+        ],
+        "data_features": [
+          "loan_to_deposit_ratio",
+          "net_non_core_funding_dependence",
+          "liquid_asset_to_total_asset_ratio"
+        ],
+        "graph_features": [],
+        "expected_output": "Liquidity ratio dashboard with peer comparison",
+        "threshold": "Peer quartile thresholds",
+        "tool_hint": "Ratio calculations with peer benchmark comparison"
+      }
+    ]
+  },
+  {
+    "step_id": "liq_step_2",
+    "procedure_id": "liquidity_assessment",
+    "phase": "capital_adequacy",
+    "data_requirements": [
+      {
+        "data_type": "risk_management",
+        "name": "Contingency Funding Plan and emergency liquidity",
+        "scope": "",
+        "fields": [
+          "cfp_trigger_levels",
+          "action_steps",
+          "discount_window_eligibility",
+          "fhlb_borrowing_capacity",
+          "liquidity_buffer_amount"
+        ],
+        "source_system": "Treasury department",
+        "format": "CFP document",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "cap_step_1",
+    "procedure_id": "capital_analysis",
+    "phase": "capital_adequacy",
+    "data_requirements": [
+      {
+        "data_type": "financial_data",
+        "name": "Capital ratios and risk-weighted assets",
+        "scope": "Trailing 8 quarters",
+        "fields": [
+          "cet1_ratio",
+          "tier1_ratio",
+          "total_capital_ratio",
+          "leverage_ratio",
+          "risk_weighted_assets",
+          "capital_components"
+        ],
+        "source_system": "Call Report / Capital planning",
+        "format": "Regulatory filing",
+        "frequency": "quarterly",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Capital adequacy ratio analysis",
+        "description": "Calculate and compare capital ratios against Well Capitalized, Adequately Capitalized, and Undercapitalized thresholds",
+        "input_data": [
+          "Capital ratios data"
+        ],
+        "data_features": [
+          "cet1_ratio",
+          "tier1_ratio",
+          "total_capital_ratio",
+          "leverage_ratio"
+        ],
+        "graph_features": [],
+        "expected_output": "Capital ratio comparison against PCA thresholds and peer benchmarks",
+        "threshold": "Well Capitalized: CET1 >= 6.5%, Tier1 >= 8%, Total >= 10%, Leverage >= 5%",
+        "tool_hint": "Bar chart of ratios with PCA threshold lines"
+      },
+      {
+        "procedure_type": "variance_analysis",
+        "name": "Risk-weighted asset composition analysis",
+        "description": "Analyze the composition of risk-weighted assets and verify risk weight assignments for major asset categories",
+        "input_data": [
+          "Risk-weighted assets breakdown"
+        ],
+        "data_features": [
+          "asset_category",
+          "risk_weight",
+          "rwa_contribution",
+          "quarter_change"
+        ],
+        "graph_features": [],
+        "expected_output": "RWA composition with risk weight verification",
+        "threshold": "",
+        "tool_hint": "Treemap of RWA by asset category with risk weight verification"
+      }
+    ]
+  },
+  {
+    "step_id": "cap_step_2",
+    "procedure_id": "capital_analysis",
+    "phase": "capital_adequacy",
+    "data_requirements": [
+      {
+        "data_type": "risk_management",
+        "name": "Capital planning and stress test data",
+        "scope": "",
+        "fields": [
+          "capital_plan",
+          "dividend_policy",
+          "stress_test_results",
+          "capital_projections",
+          "icaap_assessment"
+        ],
+        "source_system": "Capital planning department",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "it_step_1",
+    "procedure_id": "it_examination",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "it_governance",
+        "name": "IT governance and risk management documentation",
+        "scope": "",
+        "fields": [
+          "it_strategic_plan",
+          "it_risk_framework",
+          "it_policies_inventory",
+          "it_audit_results"
+        ],
+        "source_system": "IT department",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "it_step_2",
+    "procedure_id": "it_examination",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "it_security",
+        "name": "Cybersecurity controls and incident data",
+        "scope": "Since prior examination",
+        "fields": [
+          "network_security_config",
+          "access_management_controls",
+          "patch_management_status",
+          "incident_response_plan",
+          "vendor_risk_assessments"
+        ],
+        "source_system": "IT security systems",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "cc_step_1",
+    "procedure_id": "consumer_compliance",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "compliance",
+        "name": "HMDA data and fair lending analysis",
+        "scope": "Prior calendar year",
+        "fields": [
+          "loan_application_id",
+          "applicant_demographics",
+          "loan_type",
+          "action_taken",
+          "loan_amount",
+          "rate_spread",
+          "geographic_data"
+        ],
+        "source_system": "HMDA LAR",
+        "format": "HMDA Loan Application Register",
+        "frequency": "annual",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Fair lending disparate treatment analysis",
+        "description": "Statistical analysis of HMDA data for disparate treatment indicators across protected class groups in approval rates and pricing",
+        "input_data": [
+          "HMDA LAR data"
+        ],
+        "data_features": [
+          "approval_rate_by_demographic",
+          "pricing_by_demographic",
+          "denial_rate_by_demographic",
+          "geographic_lending_patterns"
+        ],
+        "graph_features": [],
+        "expected_output": "Statistical comparison of lending outcomes across demographic groups",
+        "threshold": "Statistically significant disparity (p < 0.05)",
+        "tool_hint": "Logistic regression on approval; comparative rate analysis by group"
+      }
+    ]
+  },
+  {
+    "step_id": "cc_step_2",
+    "procedure_id": "consumer_compliance",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "compliance",
+        "name": "Consumer lending disclosure and regulatory compliance data",
+        "scope": "",
+        "fields": [
+          "tila_disclosure_accuracy",
+          "respa_compliance",
+          "apr_calculations",
+          "fee_disclosures"
+        ],
+        "source_system": "Loan origination system",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "cam_step_1",
+    "procedure_id": "camels_rating_determination",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "examination_findings",
+        "name": "Examination findings by CAMELS component",
+        "scope": "Current examination",
+        "fields": [
+          "component",
+          "key_findings",
+          "proposed_rating",
+          "rating_rationale",
+          "prior_rating"
+        ],
+        "source_system": "Examination workpapers",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "peer_data",
+        "name": "CAMELS peer group rating distributions",
+        "scope": "",
+        "fields": [
+          "peer_group_id",
+          "component_rating_distribution",
+          "composite_rating_distribution"
+        ],
+        "source_system": "Supervisory database",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Component rating support analysis",
+        "description": "Synthesize financial ratios and examination findings into component rating justification with peer comparison",
+        "input_data": [
+          "Financial indicators",
+          "Examination findings",
+          "Peer data"
+        ],
+        "data_features": [
+          "capital_ratios",
+          "asset_quality_metrics",
+          "earnings_ratios",
+          "liquidity_ratios"
+        ],
+        "graph_features": [],
+        "expected_output": "Component rating summary with supporting metrics and peer positioning",
+        "threshold": "",
+        "tool_hint": "CAMELS scorecard with key metrics per component"
+      },
+      {
+        "procedure_type": "trend_analysis",
+        "name": "CAMELS rating trend comparison",
+        "description": "Compare proposed ratings against prior examination ratings to identify rating direction and ensure consistency",
+        "input_data": [
+          "Current and prior examination data"
+        ],
+        "data_features": [
+          "component_name",
+          "current_proposed_rating",
+          "prior_rating",
+          "rating_direction"
+        ],
+        "graph_features": [],
+        "expected_output": "Rating comparison chart showing prior vs. proposed ratings",
+        "threshold": "",
+        "tool_hint": "Comparison table of prior vs. current with direction arrows"
+      }
+    ]
+  },
+  {
+    "step_id": "cam_step_2",
+    "procedure_id": "camels_rating_determination",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "examination_findings",
+        "name": "Composite rating determination data",
+        "scope": "",
+        "fields": [
+          "component_ratings",
+          "composite_rating_proposal",
+          "overall_institutional_condition"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "expectation_model",
+        "name": "Composite rating expectation model",
+        "description": "Model expected composite rating from component ratings and financial indicators, flagging divergence from model expectation",
+        "input_data": [
+          "Component ratings",
+          "Financial indicators"
+        ],
+        "data_features": [
+          "c_rating",
+          "a_rating",
+          "m_rating",
+          "e_rating",
+          "l_rating",
+          "s_rating"
+        ],
+        "graph_features": [],
+        "expected_output": "Expected composite range with divergence analysis",
+        "threshold": "",
+        "tool_hint": "Weighted model of components with historical calibration"
+      }
+    ]
+  },
+  {
+    "step_id": "cam_step_3",
+    "procedure_id": "camels_rating_determination",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "supervisory",
+        "name": "Rating review and consistency data",
+        "scope": "",
+        "fields": [
+          "proposed_ratings",
+          "rating_comparability",
+          "documentation_adequacy"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "find_step_1",
+    "procedure_id": "findings_communication",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "examination_findings",
+        "name": "MRA/MRIA findings documentation",
+        "scope": "",
+        "fields": [
+          "finding_description",
+          "applicable_standard",
+          "required_corrective_action",
+          "severity_level",
+          "due_date"
+        ],
+        "source_system": "Examination workpapers",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "find_step_2",
+    "procedure_id": "findings_communication",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "report_components",
+        "name": "Report of Examination components",
+        "scope": "",
+        "fields": [
+          "camels_ratings",
+          "mra_mria_items",
+          "examination_narrative",
+          "required_disclosures"
+        ],
+        "source_system": "",
+        "format": "ROE template",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "exit_step_1",
+    "procedure_id": "exit_meeting",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "report_components",
+        "name": "Exit meeting presentation materials",
+        "scope": "",
+        "fields": [
+          "examination_findings_summary",
+          "rating_changes",
+          "mra_mria_summary",
+          "corrective_action_expectations"
+        ],
+        "source_system": "",
+        "format": "Presentation/talking points",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "exit_step_2",
+    "procedure_id": "exit_meeting",
+    "phase": "examination_conclusion",
+    "data_requirements": [
+      {
+        "data_type": "communication",
+        "name": "Management response documentation",
+        "scope": "",
+        "fields": [
+          "management_responses",
+          "corrective_action_commitments",
+          "due_dates",
+          "roe_transmittal_status"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "enf_step_1",
+    "procedure_id": "enforcement_action",
+    "phase": "enforcement",
+    "data_requirements": [
+      {
+        "data_type": "supervisory",
+        "name": "Enforcement action precedent data",
+        "scope": "",
+        "fields": [
+          "camels_rating",
+          "finding_severity",
+          "prior_enforcement_history",
+          "comparable_cases"
+        ],
+        "source_system": "Enforcement database",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "enf_step_2",
+    "procedure_id": "enforcement_action",
+    "phase": "enforcement",
+    "data_requirements": [
+      {
+        "data_type": "legal",
+        "name": "Enforcement action documentation",
+        "scope": "",
+        "fields": [
+          "enforcement_type",
+          "proposed_terms",
+          "factual_basis",
+          "legal_authority"
+        ],
+        "source_system": "",
+        "format": "Enforcement action memorandum",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "enf_step_3",
+    "procedure_id": "enforcement_action",
+    "phase": "enforcement",
+    "data_requirements": [
+      {
+        "data_type": "supervisory",
+        "name": "Enforcement approval and issuance data",
+        "scope": "",
+        "fields": [
+          "enforcement_type",
+          "approval_authority",
+          "consistency_assessment",
+          "public_disclosure_requirement"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  }
+]
