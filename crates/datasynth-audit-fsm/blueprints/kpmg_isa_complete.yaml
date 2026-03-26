@@ -4,8 +4,9 @@ methodology:
   name: KPMG Clara ISA-Complete Financial Statement Audit
   version: '2025.1'
   framework: ISA
-  description: ISA-complete financial statement audit methodology styled after KPMG Clara workflow. Based on public ISA standards,
-    not proprietary KPMG content. Covers all 37 ISA standards with 702 requirement paragraphs.
+  description: ISA-complete financial statement audit methodology styled after KPMG Clara workflow (KCw/KCa/KCc modules).
+    Based on public ISA standards and publicly known tool names, not proprietary KPMG content. 37 ISA procedures plus firm-specific
+    analytics and quality gate procedures.
 discriminators:
   tiers:
   - core
@@ -38,6 +39,12 @@ actors:
   responsibilities:
   - Independent quality review
   - Concurring on significant judgments
+- id: eqcr
+  name: Engagement Quality Control Reviewer
+  responsibilities:
+  - Multi-point engagement quality control review
+  - Pre-issuance sign-off on audit report
+  - Review of significant judgments at planning, interim, and completion
 standards_catalog:
 - ref: ISA 200
   title: Overall Objectives of the Independent Auditor and the Conduct of an Audit
@@ -416,6 +423,27 @@ evidence_catalog:
   lifecycle:
   - draft
   - finalized
+- id: transaction_scoring_results
+  name: KCa Transaction Scoring Results
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: forensic_analytics_memo
+  name: Forensic Analytics Memorandum
+  type: memo
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: eqcr_checkpoint_record
+  name: EQCR Multi-Point Review Record
+  type: workpaper
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
 phases:
 - id: engagement_acceptance
   name: Client Acceptance & Continuance
@@ -427,6 +455,8 @@ phases:
     - procedure: proc_isa_210
       state: completed
     - procedure: proc_isa_220
+      state: completed
+    - procedure: sentinel_independence_check
       state: completed
 - id: planning
   name: Planning & Strategy Development
@@ -449,6 +479,8 @@ phases:
       state: completed
     - procedure: proc_isa_320
       state: completed
+    - procedure: business_process_mining
+      state: completed
 - id: risk_response
   name: Design Audit Responses
   order: 3
@@ -459,6 +491,10 @@ phases:
     - procedure: proc_isa_402
       state: completed
     - procedure: proc_isa_450
+      state: completed
+    - procedure: full_population_transaction_scoring
+      state: completed
+    - procedure: sod_transaction_analysis
       state: completed
 - id: evidence_gathering
   name: Execute Audit Procedures
@@ -486,6 +522,8 @@ phases:
     - procedure: proc_isa_570
       state: completed
     - procedure: proc_isa_580
+      state: completed
+    - procedure: forensic_fraud_analytics
       state: completed
 - id: group_audits
   name: Group Audit Considerations
@@ -520,6 +558,10 @@ phases:
     - procedure: proc_isa_805
       state: completed
     - procedure: proc_isa_810
+      state: completed
+    - procedure: eqcr_multi_point_review
+      state: completed
+    - procedure: fra_disclosure_review
       state: completed
 - id: quality_review
   name: Engagement Quality Review
@@ -17522,3 +17564,632 @@ procedures:
         type: workpaper
   preconditions:
   - proc_isa_805
+- id: sentinel_independence_check
+  phase: engagement_acceptance
+  title: Sentinel Independence and Conflict Check
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_sentinel_independence_check
+      emits: SentinelIndependenceCheckStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_sentinel_independence_check
+      emits: SentinelIndependenceCheckSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_sentinel_independence_check
+      emits: SentinelIndependenceCheckRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_sentinel_independence_check
+      emits: SentinelIndependenceCheckApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_sentinel_independence_check_1
+    order: 1
+    action: verify
+    actor: senior_associate
+    description: Run automated independence screening against entity and related parties
+    binding: guidance
+    command: verify_sentinel_independence_check_step_1
+    emits: SentinelIndependenceCheckStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated conflict-of-interest database screening
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_sentinel_independence_check_2
+    order: 2
+    action: evaluate
+    actor: engagement_partner
+    description: Evaluate flagged independence threats and safeguards
+    binding: guidance
+    command: evaluate_sentinel_independence_check_step_2
+    emits: SentinelIndependenceCheckStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    human_responsibilities:
+    - Make all substantive professional judgments on independence
+    standards: []
+  - id: step_sentinel_independence_check_3
+    order: 3
+    action: document
+    actor: engagement_manager
+    description: Document independence conclusions and safeguards applied
+    binding: guidance
+    command: document_sentinel_independence_check_step_3
+    emits: SentinelIndependenceCheckStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_210
+- id: business_process_mining
+  phase: planning
+  title: KCa Business Process Mining
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_business_process_mining
+      emits: BusinessProcessMiningStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_business_process_mining
+      emits: BusinessProcessMiningSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_business_process_mining
+      emits: BusinessProcessMiningRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_business_process_mining
+      emits: BusinessProcessMiningApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_business_process_mining_1
+    order: 1
+    action: extract
+    actor: senior_associate
+    description: Ingest client ERP event logs for process mining analysis
+    binding: guidance
+    command: extract_business_process_mining_step_1
+    emits: BusinessProcessMiningStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_business_process_mining_2
+    order: 2
+    action: analyze
+    actor: senior_associate
+    description: Discover process variants and identify deviations from expected workflows
+    binding: guidance
+    command: analyze_business_process_mining_step_2
+    emits: BusinessProcessMiningStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - Process variant discovery
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_business_process_mining_3
+    order: 3
+    action: evaluate
+    actor: engagement_partner
+    description: Assess process deviations for control weakness indicators and fraud risk
+    binding: guidance
+    command: evaluate_business_process_mining_step_3
+    emits: BusinessProcessMiningStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_business_process_mining_4
+    order: 4
+    action: document
+    actor: engagement_manager
+    description: Document process mining findings and link to risk assessment workpapers
+    binding: guidance
+    command: document_business_process_mining_step_4
+    emits: BusinessProcessMiningStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_315
+- id: full_population_transaction_scoring
+  phase: risk_response
+  title: KCa Full Population Transaction Scoring
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_full_population_transaction_scoring
+      emits: FullPopulationTransactionScoringStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_full_population_transaction_scoring
+      emits: FullPopulationTransactionScoringSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_full_population_transaction_scoring
+      emits: FullPopulationTransactionScoringRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_full_population_transaction_scoring
+      emits: FullPopulationTransactionScoringApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_full_population_transaction_scoring_1
+    order: 1
+    action: extract
+    actor: senior_associate
+    description: Ingest 100 percent of journal entry population into KCa analytics engine
+    binding: guidance
+    command: extract_full_population_transaction_scoring_step_1
+    emits: FullPopulationTransactionScoringStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_full_population_transaction_scoring_2
+    order: 2
+    action: score
+    actor: senior_associate
+    description: Apply rules-based, statistical, and ML scoring to each transaction
+    binding: guidance
+    command: score_full_population_transaction_scoring_step_2
+    emits: FullPopulationTransactionScoringStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - ML-based risk scoring
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_full_population_transaction_scoring_3
+    order: 3
+    action: evaluate
+    actor: engagement_partner
+    description: Review high-risk scored transactions and determine further procedures needed
+    binding: guidance
+    command: evaluate_full_population_transaction_scoring_step_3
+    emits: FullPopulationTransactionScoringStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_full_population_transaction_scoring_4
+    order: 4
+    action: document
+    actor: engagement_manager
+    description: Document transaction scoring results and link to audit response workpapers
+    binding: guidance
+    command: document_full_population_transaction_scoring_step_4
+    emits: FullPopulationTransactionScoringStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_330
+- id: sod_transaction_analysis
+  phase: risk_response
+  title: KCa Segregation of Duties Transaction Analysis
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_sod_transaction_analysis
+      emits: SodTransactionAnalysisStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_sod_transaction_analysis
+      emits: SodTransactionAnalysisSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_sod_transaction_analysis
+      emits: SodTransactionAnalysisRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_sod_transaction_analysis
+      emits: SodTransactionAnalysisApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_sod_transaction_analysis_1
+    order: 1
+    action: analyze
+    actor: senior_associate
+    description: Map user access roles and identify conflicting duty combinations in transaction data
+    binding: guidance
+    command: analyze_sod_transaction_analysis_step_1
+    emits: SodTransactionAnalysisStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    - Statistical analysis and anomaly detection
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_sod_transaction_analysis_2
+    order: 2
+    action: evaluate
+    actor: engagement_partner
+    description: Assess SoD violations for materiality and link to control deficiency assessment
+    binding: guidance
+    command: evaluate_sod_transaction_analysis_step_2
+    emits: SodTransactionAnalysisStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  - id: step_sod_transaction_analysis_3
+    order: 3
+    action: document
+    actor: engagement_manager
+    description: Document SoD analysis findings and mitigating controls evaluation
+    binding: guidance
+    command: document_sod_transaction_analysis_step_3
+    emits: SodTransactionAnalysisStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - full_population_transaction_scoring
+- id: forensic_fraud_analytics
+  phase: evidence_gathering
+  title: KCa Forensic Fraud Analytics
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_forensic_fraud_analytics
+      emits: ForensicFraudAnalyticsStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_forensic_fraud_analytics
+      emits: ForensicFraudAnalyticsSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_forensic_fraud_analytics
+      emits: ForensicFraudAnalyticsRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_forensic_fraud_analytics
+      emits: ForensicFraudAnalyticsApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_forensic_fraud_analytics_1
+    order: 1
+    action: analyze
+    actor: senior_associate
+    description: Run forensic analytics patterns including Benford analysis, round-number detection, and duplicate detection
+    binding: guidance
+    command: analyze_forensic_fraud_analytics_step_1
+    emits: ForensicFraudAnalyticsStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - Benford's law analysis
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_forensic_fraud_analytics_2
+    order: 2
+    action: analyze
+    actor: senior_associate
+    description: Apply network analysis to identify unusual relationship patterns among vendors and employees
+    binding: guidance
+    command: analyze_forensic_fraud_analytics_step_2
+    emits: ForensicFraudAnalyticsStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - Network graph analysis
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_forensic_fraud_analytics_3
+    order: 3
+    action: evaluate
+    actor: engagement_partner
+    description: Evaluate forensic analytics results for indicators of fraud or management override
+    binding: guidance
+    command: evaluate_forensic_fraud_analytics_step_3
+    emits: ForensicFraudAnalyticsStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  - id: step_forensic_fraud_analytics_4
+    order: 4
+    action: document
+    actor: engagement_manager
+    description: Document forensic analytics procedures performed and conclusions reached per ISA 240
+    binding: guidance
+    command: document_forensic_fraud_analytics_step_4
+    emits: ForensicFraudAnalyticsStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_500
+- id: eqcr_multi_point_review
+  phase: reporting
+  title: EQCR Multi-Point Quality Review
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_eqcr_multi_point_review
+      emits: EqcrMultiPointReviewStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_eqcr_multi_point_review
+      emits: EqcrMultiPointReviewSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_eqcr_multi_point_review
+      emits: EqcrMultiPointReviewRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_eqcr_multi_point_review
+      emits: EqcrMultiPointReviewApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_eqcr_multi_point_review_1
+    order: 1
+    action: review
+    actor: engagement_partner
+    description: 'Planning checkpoint review: evaluate audit strategy, materiality, and risk assessment decisions'
+    binding: guidance
+    command: review_eqcr_multi_point_review_step_1
+    emits: EqcrMultiPointReviewStep1Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Consistency checking across workpapers
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_eqcr_multi_point_review_2
+    order: 2
+    action: review
+    actor: engagement_partner
+    description: 'Interim checkpoint review: evaluate progress on significant risk areas and control testing results'
+    binding: guidance
+    command: review_eqcr_multi_point_review_step_2
+    emits: EqcrMultiPointReviewStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Consistency checking across workpapers
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  - id: step_eqcr_multi_point_review_3
+    order: 3
+    action: review
+    actor: engagement_partner
+    description: 'Pre-completion checkpoint: review significant accounting judgments, estimates, and misstatement evaluation'
+    binding: guidance
+    command: review_eqcr_multi_point_review_step_3
+    emits: EqcrMultiPointReviewStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Research and reference lookup
+    human_responsibilities:
+    - Evaluate sufficiency and appropriateness of evidence
+    - Document rationale for conclusions reached
+    standards: []
+  - id: step_eqcr_multi_point_review_4
+    order: 4
+    action: review
+    actor: engagement_partner
+    description: 'Pre-issuance checkpoint: final review of audit report, KAM paragraphs, and going concern conclusions'
+    binding: guidance
+    command: review_eqcr_multi_point_review_step_4
+    emits: EqcrMultiPointReviewStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Consistency checking across workpapers
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_eqcr_multi_point_review_5
+    order: 5
+    action: document
+    actor: engagement_manager
+    description: Document EQCR conclusions and sign-off at each checkpoint
+    binding: guidance
+    command: document_eqcr_multi_point_review_step_5
+    emits: EqcrMultiPointReviewStep5Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_700
+- id: fra_disclosure_review
+  phase: reporting
+  title: Financial Reporting Analytics Disclosure Review
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_fra_disclosure_review
+      emits: FraDisclosureReviewStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_fra_disclosure_review
+      emits: FraDisclosureReviewSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_fra_disclosure_review
+      emits: FraDisclosureReviewRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_fra_disclosure_review
+      emits: FraDisclosureReviewApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_fra_disclosure_review_1
+    order: 1
+    action: analyze
+    actor: senior_associate
+    description: Run automated consistency checks across financial statement disclosures and notes
+    binding: guidance
+    command: analyze_fra_disclosure_review_step_1
+    emits: FraDisclosureReviewStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Document comparison and reconciliation
+    - Automated data extraction and validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_fra_disclosure_review_2
+    order: 2
+    action: compare
+    actor: senior_associate
+    description: Cross-reference disclosure amounts against underlying workpapers and trial balance
+    binding: guidance
+    command: compare_fra_disclosure_review_step_2
+    emits: FraDisclosureReviewStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Document comparison and reconciliation
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_fra_disclosure_review_3
+    order: 3
+    action: evaluate
+    actor: engagement_partner
+    description: Evaluate disclosure completeness and compliance with applicable framework requirements
+    binding: guidance
+    command: evaluate_fra_disclosure_review_step_3
+    emits: FraDisclosureReviewStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Research and reference lookup
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  preconditions:
+  - eqcr_multi_point_review

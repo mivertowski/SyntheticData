@@ -4,8 +4,9 @@ methodology:
   name: PwC Aura ISA-Complete Financial Statement Audit
   version: '2025.1'
   framework: ISA
-  description: ISA-complete financial statement audit methodology styled after PwC Aura workflow. Based on public ISA standards,
-    not proprietary PwC content. Covers all 37 ISA standards with 702 requirement paragraphs.
+  description: ISA-complete financial statement audit methodology styled after PwC Aura workflow with Halo analytics suite.
+    Based on public ISA standards and publicly known tool names, not proprietary PwC content. 37 ISA procedures plus firm-specific
+    FRISK assessment, Halo analytics, and multi-level quality review procedures.
 discriminators:
   tiers:
   - core
@@ -39,6 +40,12 @@ actors:
   - Data analytics procedures
   - Journal entry testing
   - Trend analysis
+- id: qrp
+  name: Quality Review Partner
+  responsibilities:
+  - Hot review of significant audit judgments
+  - Pre-issuance quality review
+  - Challenge of key audit conclusions
 standards_catalog:
 - ref: ISA 200
   title: Overall Objectives of the Independent Auditor and the Conduct of an Audit
@@ -417,6 +424,27 @@ evidence_catalog:
   lifecycle:
   - draft
   - finalized
+- id: frisk_assessment_record
+  name: FRISK Risk Assessment Record
+  type: assessment
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: halo_analytics_workpaper
+  name: Halo Analytics Workpaper
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: qrp_review_record
+  name: QRP Hot Review Record
+  type: workpaper
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
 phases:
 - id: engagement_acceptance
   name: Engagement Acceptance
@@ -428,6 +456,8 @@ phases:
     - procedure: proc_isa_210
       state: completed
     - procedure: proc_isa_220
+      state: completed
+    - procedure: frisk_acceptance_assessment
       state: completed
 - id: planning
   name: Preliminary Activities & Risk Assessment
@@ -488,6 +518,14 @@ phases:
       state: completed
     - procedure: proc_isa_580
       state: completed
+    - procedure: halo_journal_pattern_analysis
+      state: completed
+    - procedure: halo_full_population_testing
+      state: completed
+    - procedure: halo_three_way_match_analytics
+      state: completed
+    - procedure: halo_outlier_visualization
+      state: completed
 - id: group_audits
   name: Group & Component Audits
   order: 5
@@ -521,6 +559,10 @@ phases:
     - procedure: proc_isa_805
       state: completed
     - procedure: proc_isa_810
+      state: completed
+    - procedure: qrp_hot_review
+      state: completed
+    - procedure: engagement_compliance_review
       state: completed
 - id: halo_analytics
   name: Halo Data Analytics
@@ -17523,3 +17565,648 @@ procedures:
         type: workpaper
   preconditions:
   - proc_isa_805
+- id: frisk_acceptance_assessment
+  phase: engagement_acceptance
+  title: FRISK Pre-Engagement Risk Assessment
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_frisk_acceptance_assessment
+      emits: FriskAcceptanceAssessmentStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_frisk_acceptance_assessment
+      emits: FriskAcceptanceAssessmentSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_frisk_acceptance_assessment
+      emits: FriskAcceptanceAssessmentRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_frisk_acceptance_assessment
+      emits: FriskAcceptanceAssessmentApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_frisk_acceptance_assessment_1
+    order: 1
+    action: assess
+    actor: engagement_leader
+    description: Evaluate financial stability indicators including liquidity ratios, debt covenants, and going concern signals
+    binding: guidance
+    command: assess_frisk_acceptance_assessment_step_1
+    emits: FriskAcceptanceAssessmentStep1Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Automated data extraction and validation
+    - Statistical analysis and anomaly detection
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  - id: step_frisk_acceptance_assessment_2
+    order: 2
+    action: assess
+    actor: engagement_leader
+    description: Evaluate regulatory and litigation risk factors including pending lawsuits and regulatory actions
+    binding: guidance
+    command: assess_frisk_acceptance_assessment_step_2
+    emits: FriskAcceptanceAssessmentStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Research and reference lookup
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  - id: step_frisk_acceptance_assessment_3
+    order: 3
+    action: assess
+    actor: engagement_leader
+    description: Evaluate integrity and competence of management and those charged with governance
+    binding: guidance
+    command: assess_frisk_acceptance_assessment_step_3
+    emits: FriskAcceptanceAssessmentStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  - id: step_frisk_acceptance_assessment_4
+    order: 4
+    action: assess
+    actor: engagement_leader
+    description: Evaluate industry-specific risk factors including market volatility and competitive pressures
+    binding: guidance
+    command: assess_frisk_acceptance_assessment_step_4
+    emits: FriskAcceptanceAssessmentStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  - id: step_frisk_acceptance_assessment_5
+    order: 5
+    action: assess
+    actor: engagement_leader
+    description: Evaluate entity complexity including number of locations, related parties, and unusual transactions
+    binding: guidance
+    command: assess_frisk_acceptance_assessment_step_5
+    emits: FriskAcceptanceAssessmentStep5Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  - id: step_frisk_acceptance_assessment_6
+    order: 6
+    action: determine
+    actor: engagement_leader
+    description: Calculate overall FRISK score and determine engagement acceptance or continuance decision
+    binding: guidance
+    command: determine_frisk_acceptance_assessment_step_6
+    emits: FriskAcceptanceAssessmentStep6Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Documentation drafting
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  preconditions:
+  - proc_isa_210
+- id: halo_journal_pattern_analysis
+  phase: evidence_gathering
+  title: Halo Journal Entry Pattern Analysis
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_halo_journal_pattern_analysis
+      emits: HaloJournalPatternAnalysisStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_halo_journal_pattern_analysis
+      emits: HaloJournalPatternAnalysisSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_halo_journal_pattern_analysis
+      emits: HaloJournalPatternAnalysisRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_halo_journal_pattern_analysis
+      emits: HaloJournalPatternAnalysisApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_halo_journal_pattern_analysis_1
+    order: 1
+    action: extract
+    actor: senior_associate
+    description: Ingest complete journal entry population and prepare data for Halo pattern analysis
+    binding: guidance
+    command: extract_halo_journal_pattern_analysis_step_1
+    emits: HaloJournalPatternAnalysisStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_journal_pattern_analysis_2
+    order: 2
+    action: analyze
+    actor: senior_associate
+    description: Run Halo pattern detection algorithms including unusual posting times, amounts, and user behavior
+    binding: guidance
+    command: analyze_halo_journal_pattern_analysis_step_2
+    emits: HaloJournalPatternAnalysisStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - ML-based pattern recognition
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_journal_pattern_analysis_3
+    order: 3
+    action: evaluate
+    actor: engagement_leader
+    description: Evaluate flagged journal entries for fraud risk indicators per ISA 240
+    binding: guidance
+    command: evaluate_halo_journal_pattern_analysis_step_3
+    emits: HaloJournalPatternAnalysisStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_halo_journal_pattern_analysis_4
+    order: 4
+    action: document
+    actor: engagement_manager
+    description: Document journal entry testing results and conclusions in analytics workpaper
+    binding: guidance
+    command: document_halo_journal_pattern_analysis_step_4
+    emits: HaloJournalPatternAnalysisStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_500
+- id: halo_full_population_testing
+  phase: evidence_gathering
+  title: Halo Full Population Analytics Testing
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_halo_full_population_testing
+      emits: HaloFullPopulationTestingStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_halo_full_population_testing
+      emits: HaloFullPopulationTestingSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_halo_full_population_testing
+      emits: HaloFullPopulationTestingRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_halo_full_population_testing
+      emits: HaloFullPopulationTestingApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_halo_full_population_testing_1
+    order: 1
+    action: analyze
+    actor: senior_associate
+    description: Perform full population revenue testing including cutoff analysis and trend detection
+    binding: guidance
+    command: analyze_halo_full_population_testing_step_1
+    emits: HaloFullPopulationTestingStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_full_population_testing_2
+    order: 2
+    action: analyze
+    actor: senior_associate
+    description: Perform full population expenditure testing including duplicate detection and Benford analysis
+    binding: guidance
+    command: analyze_halo_full_population_testing_step_2
+    emits: HaloFullPopulationTestingStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - Benford's law analysis
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_full_population_testing_3
+    order: 3
+    action: evaluate
+    actor: engagement_leader
+    description: Review analytics exceptions and determine items requiring further substantive testing
+    binding: guidance
+    command: evaluate_halo_full_population_testing_step_3
+    emits: HaloFullPopulationTestingStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_halo_full_population_testing_4
+    order: 4
+    action: document
+    actor: engagement_manager
+    description: Document full population testing results and their impact on substantive procedures
+    binding: guidance
+    command: document_halo_full_population_testing_step_4
+    emits: HaloFullPopulationTestingStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - halo_journal_pattern_analysis
+- id: halo_three_way_match_analytics
+  phase: evidence_gathering
+  title: Halo Three-Way Match Analytics
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_halo_three_way_match_analytics
+      emits: HaloThreeWayMatchAnalyticsStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_halo_three_way_match_analytics
+      emits: HaloThreeWayMatchAnalyticsSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_halo_three_way_match_analytics
+      emits: HaloThreeWayMatchAnalyticsRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_halo_three_way_match_analytics
+      emits: HaloThreeWayMatchAnalyticsApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_halo_three_way_match_analytics_1
+    order: 1
+    action: extract
+    actor: senior_associate
+    description: Ingest PO, goods receipt, and invoice populations for three-way matching
+    binding: guidance
+    command: extract_halo_three_way_match_analytics_step_1
+    emits: HaloThreeWayMatchAnalyticsStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_three_way_match_analytics_2
+    order: 2
+    action: analyze
+    actor: senior_associate
+    description: Perform automated three-way match analysis identifying unmatched and partially matched items
+    binding: guidance
+    command: analyze_halo_three_way_match_analytics_step_2
+    emits: HaloThreeWayMatchAnalyticsStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Document comparison and reconciliation
+    - Statistical analysis and anomaly detection
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_halo_three_way_match_analytics_3
+    order: 3
+    action: evaluate
+    actor: engagement_leader
+    description: Evaluate unmatched items for indicators of fictitious transactions or procurement fraud
+    binding: guidance
+    command: evaluate_halo_three_way_match_analytics_step_3
+    emits: HaloThreeWayMatchAnalyticsStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  preconditions:
+  - halo_full_population_testing
+- id: halo_outlier_visualization
+  phase: evidence_gathering
+  title: Halo Outlier Visualization and Investigation
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_halo_outlier_visualization
+      emits: HaloOutlierVisualizationStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_halo_outlier_visualization
+      emits: HaloOutlierVisualizationSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_halo_outlier_visualization
+      emits: HaloOutlierVisualizationRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_halo_outlier_visualization
+      emits: HaloOutlierVisualizationApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_halo_outlier_visualization_1
+    order: 1
+    action: analyze
+    actor: senior_associate
+    description: Generate interactive outlier visualizations across all significant account populations
+    binding: guidance
+    command: analyze_halo_outlier_visualization_step_1
+    emits: HaloOutlierVisualizationStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - Interactive data visualization
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_outlier_visualization_2
+    order: 2
+    action: evaluate
+    actor: engagement_leader
+    description: Investigate statistically significant outliers and assess audit implications
+    binding: guidance
+    command: evaluate_halo_outlier_visualization_step_2
+    emits: HaloOutlierVisualizationStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_halo_outlier_visualization_3
+    order: 3
+    action: document
+    actor: engagement_manager
+    description: Document outlier investigation results and conclusions for each significant account
+    binding: guidance
+    command: document_halo_outlier_visualization_step_3
+    emits: HaloOutlierVisualizationStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - halo_three_way_match_analytics
+- id: qrp_hot_review
+  phase: reporting
+  title: Quality Review Partner Hot Review
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_qrp_hot_review
+      emits: QrpHotReviewStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_qrp_hot_review
+      emits: QrpHotReviewSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_qrp_hot_review
+      emits: QrpHotReviewRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_qrp_hot_review
+      emits: QrpHotReviewApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_qrp_hot_review_1
+    order: 1
+    action: review
+    actor: engagement_leader
+    description: Review significant accounting judgments including revenue recognition, estimates, and going concern
+    binding: guidance
+    command: review_qrp_hot_review_step_1
+    emits: QrpHotReviewStep1Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Consistency checking across workpapers
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_qrp_hot_review_2
+    order: 2
+    action: review
+    actor: engagement_leader
+    description: Challenge key audit matter determinations and related disclosures in the audit report
+    binding: guidance
+    command: review_qrp_hot_review_step_2
+    emits: QrpHotReviewStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Research and reference lookup
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  - id: step_qrp_hot_review_3
+    order: 3
+    action: review
+    actor: engagement_leader
+    description: Evaluate overall sufficiency and appropriateness of audit evidence for opinion formation
+    binding: guidance
+    command: review_qrp_hot_review_step_3
+    emits: QrpHotReviewStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Consistency checking across workpapers
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_qrp_hot_review_4
+    order: 4
+    action: document
+    actor: engagement_manager
+    description: Document QRP review findings, discussion points, and sign-off
+    binding: guidance
+    command: document_qrp_hot_review_step_4
+    emits: QrpHotReviewStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_700
+- id: engagement_compliance_review
+  phase: reporting
+  title: Engagement Compliance Review
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_engagement_compliance_review
+      emits: EngagementComplianceReviewStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_engagement_compliance_review
+      emits: EngagementComplianceReviewSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_engagement_compliance_review
+      emits: EngagementComplianceReviewRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_engagement_compliance_review
+      emits: EngagementComplianceReviewApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_engagement_compliance_review_1
+    order: 1
+    action: verify
+    actor: senior_associate
+    description: Run automated compliance checklist against firm methodology and ISA requirements
+    binding: guidance
+    command: verify_engagement_compliance_review_step_1
+    emits: EngagementComplianceReviewStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    - Document comparison and reconciliation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_engagement_compliance_review_2
+    order: 2
+    action: evaluate
+    actor: engagement_leader
+    description: Evaluate any identified methodology compliance gaps and determine remediation actions
+    binding: guidance
+    command: evaluate_engagement_compliance_review_step_2
+    emits: EngagementComplianceReviewStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Research and reference lookup
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  - id: step_engagement_compliance_review_3
+    order: 3
+    action: document
+    actor: engagement_manager
+    description: Document compliance review completion and archive engagement file
+    binding: guidance
+    command: document_engagement_compliance_review_step_3
+    emits: EngagementComplianceReviewStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - qrp_hot_review

@@ -349,19 +349,19 @@ enum FingerprintCommands {
 enum AuditCommands {
     /// Validate a blueprint YAML file
     Validate {
-        /// Blueprint source: builtin:fsa, builtin:ia, or a file path
+        /// Blueprint source: builtin:fsa, builtin:ia, builtin:kpmg, builtin:pwc, builtin:deloitte, or a file path
         #[arg(long, default_value = "builtin:fsa")]
         blueprint: String,
     },
     /// Display blueprint information
     Info {
-        /// Blueprint source: builtin:fsa, builtin:ia, or a file path
+        /// Blueprint source: builtin:fsa, builtin:ia, builtin:kpmg, builtin:pwc, builtin:deloitte, or a file path
         #[arg(long, default_value = "builtin:fsa")]
         blueprint: String,
     },
     /// Run a standalone FSM engagement
     Run {
-        /// Blueprint source: builtin:fsa, builtin:ia, or a file path
+        /// Blueprint source: builtin:fsa, builtin:ia, builtin:kpmg, builtin:pwc, builtin:deloitte, or a file path
         #[arg(long, default_value = "builtin:fsa")]
         blueprint: String,
         /// Overlay source: builtin:default, builtin:thorough, builtin:rushed, or a file path
@@ -2659,6 +2659,16 @@ fn resolve_blueprint(s: &str) -> Result<datasynth_audit_fsm::loader::BlueprintWi
         }
         "builtin:ia" => {
             BlueprintWithPreconditions::load_builtin_ia().map_err(|e| anyhow::anyhow!("{e}"))
+        }
+        "builtin:kpmg" => {
+            BlueprintWithPreconditions::load_builtin_kpmg().map_err(|e| anyhow::anyhow!("{e}"))
+        }
+        "builtin:pwc" => {
+            BlueprintWithPreconditions::load_builtin_pwc().map_err(|e| anyhow::anyhow!("{e}"))
+        }
+        "builtin:deloitte" => {
+            BlueprintWithPreconditions::load_builtin_deloitte()
+                .map_err(|e| anyhow::anyhow!("{e}"))
         }
         path => BlueprintWithPreconditions::load_from_file(PathBuf::from(path))
             .map_err(|e| anyhow::anyhow!("{e}")),

@@ -4,8 +4,9 @@ methodology:
   name: Deloitte Omnia ISA-Complete Financial Statement Audit
   version: '2025.1'
   framework: ISA
-  description: ISA-complete financial statement audit methodology styled after Deloitte Omnia platform. Based on public ISA
-    standards, not proprietary Deloitte content. Covers all 37 ISA standards with 702 requirement paragraphs.
+  description: ISA-complete financial statement audit methodology styled after Deloitte Omnia platform with Spotlight analytics
+    and Argus document extraction. Based on public ISA standards and publicly known tool names, not proprietary Deloitte content.
+    37 ISA procedures plus firm-specific analytics, AI governance, and specialist procedures.
 discriminators:
   tiers:
   - core
@@ -39,6 +40,18 @@ actors:
   responsibilities:
   - Performing detailed testing
   - Documenting results
+- id: it_specialist
+  name: IT Audit Specialist
+  responsibilities:
+  - IT general controls testing
+  - Application controls evaluation
+  - Data analytics platform validation
+- id: valuation_specialist
+  name: Valuation Specialist
+  responsibilities:
+  - Fair value measurement review
+  - Impairment testing assistance
+  - Complex financial instrument valuation
 standards_catalog:
 - ref: ISA 200
   title: Overall Objectives of the Independent Auditor and the Conduct of an Audit
@@ -417,6 +430,33 @@ evidence_catalog:
   lifecycle:
   - draft
   - finalized
+- id: cortex_ingestion_report
+  name: Cortex Data Ingestion Report
+  type: analytics
+  lifecycle:
+  - draft
+  - finalized
+- id: argus_extraction_results
+  name: Argus Document Extraction Results
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: spotlight_analytics_workpaper
+  name: Spotlight Analytics Workpaper
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: ai_governance_record
+  name: Trustworthy AI Governance Record
+  type: workpaper
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
 phases:
 - id: engagement_acceptance
   name: Engagement Setup & Acceptance
@@ -450,6 +490,12 @@ phases:
       state: completed
     - procedure: proc_isa_320
       state: completed
+    - procedure: cortex_data_ingestion
+      state: completed
+    - procedure: argus_document_extraction
+      state: completed
+    - procedure: dartbot_research_consultation
+      state: completed
 - id: risk_response
   name: Response Design & Controls
   order: 3
@@ -460,6 +506,8 @@ phases:
     - procedure: proc_isa_402
       state: completed
     - procedure: proc_isa_450
+      state: completed
+    - procedure: spotlight_risk_scoring
       state: completed
 - id: evidence_gathering
   name: Substantive Testing & Evidence
@@ -487,6 +535,12 @@ phases:
     - procedure: proc_isa_570
       state: completed
     - procedure: proc_isa_580
+      state: completed
+    - procedure: spotlight_full_population_je_analysis
+      state: completed
+    - procedure: spotlight_anonymous_benchmarking
+      state: completed
+    - procedure: iconfirm_confirmation_automation
       state: completed
 - id: group_audits
   name: Group Audit Coordination
@@ -521,6 +575,10 @@ phases:
     - procedure: proc_isa_805
       state: completed
     - procedure: proc_isa_810
+      state: completed
+    - procedure: omnia_genai_documentation_review
+      state: completed
+    - procedure: trustworthy_ai_governance_gate
       state: completed
 - id: cognitive_review
   name: Cognitive Technology Review
@@ -17523,3 +17581,780 @@ procedures:
         type: workpaper
   preconditions:
   - proc_isa_805
+- id: cortex_data_ingestion
+  phase: planning
+  title: Cortex Cloud Data Ingestion and Validation
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_cortex_data_ingestion
+      emits: CortexDataIngestionStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_cortex_data_ingestion
+      emits: CortexDataIngestionSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_cortex_data_ingestion
+      emits: CortexDataIngestionRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_cortex_data_ingestion
+      emits: CortexDataIngestionApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_cortex_data_ingestion_1
+    order: 1
+    action: extract
+    actor: audit_senior
+    description: Ingest client data into Cortex cloud platform including GL, subledgers, and master data
+    binding: guidance
+    command: extract_cortex_data_ingestion_step_1
+    emits: CortexDataIngestionStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_cortex_data_ingestion_2
+    order: 2
+    action: verify
+    actor: audit_senior
+    description: Perform automated data completeness and integrity validation checks
+    binding: guidance
+    command: verify_cortex_data_ingestion_step_2
+    emits: CortexDataIngestionStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    - Statistical analysis and anomaly detection
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_cortex_data_ingestion_3
+    order: 3
+    action: document
+    actor: audit_manager
+    description: Document data ingestion results, completeness metrics, and any reconciliation differences
+    binding: guidance
+    command: document_cortex_data_ingestion_step_3
+    emits: CortexDataIngestionStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_300
+- id: argus_document_extraction
+  phase: planning
+  title: Argus AI Document Extraction and Analysis
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_argus_document_extraction
+      emits: ArgusDocumentExtractionStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_argus_document_extraction
+      emits: ArgusDocumentExtractionSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_argus_document_extraction
+      emits: ArgusDocumentExtractionRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_argus_document_extraction
+      emits: ArgusDocumentExtractionApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_argus_document_extraction_1
+    order: 1
+    action: extract
+    actor: audit_senior
+    description: Process contracts, lease agreements, and legal letters using Argus ML and NLP extraction
+    binding: guidance
+    command: extract_argus_document_extraction_step_1
+    emits: ArgusDocumentExtractionStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    - ML-based document classification
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_argus_document_extraction_2
+    order: 2
+    action: analyze
+    actor: audit_senior
+    description: Extract key terms, dates, and financial data points from processed documents
+    binding: guidance
+    command: analyze_argus_document_extraction_step_2
+    emits: ArgusDocumentExtractionStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - NLP-based information extraction
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_argus_document_extraction_3
+    order: 3
+    action: evaluate
+    actor: lead_audit_partner
+    description: Review extracted data for accuracy and completeness, validate against client records
+    binding: guidance
+    command: evaluate_argus_document_extraction_step_3
+    emits: ArgusDocumentExtractionStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Document comparison and reconciliation
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_argus_document_extraction_4
+    order: 4
+    action: document
+    actor: audit_manager
+    description: Document Argus extraction results and link to relevant workpapers
+    binding: guidance
+    command: document_argus_document_extraction_step_4
+    emits: ArgusDocumentExtractionStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - cortex_data_ingestion
+- id: dartbot_research_consultation
+  phase: planning
+  title: DARTbot Accounting Research Consultation
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_dartbot_research_consultation
+      emits: DartbotResearchConsultationStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_dartbot_research_consultation
+      emits: DartbotResearchConsultationSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_dartbot_research_consultation
+      emits: DartbotResearchConsultationRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_dartbot_research_consultation
+      emits: DartbotResearchConsultationApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_dartbot_research_consultation_1
+    order: 1
+    action: research
+    actor: audit_manager
+    description: Query DARTbot for applicable accounting standards guidance on complex transactions identified
+    binding: guidance
+    command: research_dartbot_research_consultation_step_1
+    emits: DartbotResearchConsultationStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Research and reference lookup
+    - GenAI accounting research
+    human_responsibilities:
+    - Exercise professional judgment on conclusions
+    standards: []
+  - id: step_dartbot_research_consultation_2
+    order: 2
+    action: evaluate
+    actor: lead_audit_partner
+    description: Evaluate DARTbot research results and determine appropriate accounting treatment positions
+    binding: guidance
+    command: evaluate_dartbot_research_consultation_step_2
+    emits: DartbotResearchConsultationStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  - id: step_dartbot_research_consultation_3
+    order: 3
+    action: document
+    actor: audit_manager
+    description: Document accounting research conclusions and their impact on audit approach
+    binding: guidance
+    command: document_dartbot_research_consultation_step_3
+    emits: DartbotResearchConsultationStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_315
+- id: spotlight_risk_scoring
+  phase: risk_response
+  title: Spotlight Analytics Risk Scoring
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_spotlight_risk_scoring
+      emits: SpotlightRiskScoringStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_spotlight_risk_scoring
+      emits: SpotlightRiskScoringSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_spotlight_risk_scoring
+      emits: SpotlightRiskScoringRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_spotlight_risk_scoring
+      emits: SpotlightRiskScoringApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_spotlight_risk_scoring_1
+    order: 1
+    action: analyze
+    actor: audit_senior
+    description: Run Spotlight nine-point test suite on 100 percent journal entry population
+    binding: guidance
+    command: analyze_spotlight_risk_scoring_step_1
+    emits: SpotlightRiskScoringStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - Patented analytics algorithms
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_spotlight_risk_scoring_2
+    order: 2
+    action: score
+    actor: audit_senior
+    description: Generate composite risk scores for each journal entry based on multi-factor analysis
+    binding: guidance
+    command: score_spotlight_risk_scoring_step_2
+    emits: SpotlightRiskScoringStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - ML-based risk scoring
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_spotlight_risk_scoring_3
+    order: 3
+    action: evaluate
+    actor: lead_audit_partner
+    description: Review high-risk scored entries and determine targeted audit response procedures
+    binding: guidance
+    command: evaluate_spotlight_risk_scoring_step_3
+    emits: SpotlightRiskScoringStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_spotlight_risk_scoring_4
+    order: 4
+    action: document
+    actor: audit_manager
+    description: Document Spotlight risk scoring methodology, results, and impact on audit response
+    binding: guidance
+    command: document_spotlight_risk_scoring_step_4
+    emits: SpotlightRiskScoringStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_330
+- id: spotlight_full_population_je_analysis
+  phase: evidence_gathering
+  title: Spotlight Full Population Journal Entry Analysis
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_spotlight_full_population_je_analysis
+      emits: SpotlightFullPopulationJeAnalysisStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_spotlight_full_population_je_analysis
+      emits: SpotlightFullPopulationJeAnalysisSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_spotlight_full_population_je_analysis
+      emits: SpotlightFullPopulationJeAnalysisRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_spotlight_full_population_je_analysis
+      emits: SpotlightFullPopulationJeAnalysisApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_spotlight_full_population_je_analysis_1
+    order: 1
+    action: analyze
+    actor: audit_senior
+    description: Execute Spotlight tests including unusual posting patterns, weekend and holiday entries, and round amounts
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_1
+    emits: SpotlightFullPopulationJeAnalysisStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_2
+    order: 2
+    action: analyze
+    actor: audit_senior
+    description: Perform Spotlight segregation of duties analysis and user behavior profiling
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_2
+    emits: SpotlightFullPopulationJeAnalysisStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - User behavior analytics
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_3
+    order: 3
+    action: evaluate
+    actor: lead_audit_partner
+    description: Evaluate Spotlight flagged entries for fraud risk indicators and management override
+    binding: guidance
+    command: evaluate_spotlight_full_population_je_analysis_step_3
+    emits: SpotlightFullPopulationJeAnalysisStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_4
+    order: 4
+    action: document
+    actor: audit_manager
+    description: Document journal entry testing conclusions and link to ISA 240 fraud assessment
+    binding: guidance
+    command: document_spotlight_full_population_je_analysis_step_4
+    emits: SpotlightFullPopulationJeAnalysisStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - proc_isa_500
+- id: spotlight_anonymous_benchmarking
+  phase: evidence_gathering
+  title: Spotlight Anonymous Industry Benchmarking
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_spotlight_anonymous_benchmarking
+      emits: SpotlightAnonymousBenchmarkingStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_spotlight_anonymous_benchmarking
+      emits: SpotlightAnonymousBenchmarkingSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_spotlight_anonymous_benchmarking
+      emits: SpotlightAnonymousBenchmarkingRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_spotlight_anonymous_benchmarking
+      emits: SpotlightAnonymousBenchmarkingApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_spotlight_anonymous_benchmarking_1
+    order: 1
+    action: analyze
+    actor: audit_senior
+    description: Compare entity transaction patterns against anonymized industry benchmarks from Spotlight database
+    binding: guidance
+    command: analyze_spotlight_anonymous_benchmarking_step_1
+    emits: SpotlightAnonymousBenchmarkingStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Statistical analysis and anomaly detection
+    - Anonymous benchmarking comparison
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_spotlight_anonymous_benchmarking_2
+    order: 2
+    action: evaluate
+    actor: lead_audit_partner
+    description: Assess statistically significant deviations from industry norms for audit risk implications
+    binding: guidance
+    command: evaluate_spotlight_anonymous_benchmarking_step_2
+    emits: SpotlightAnonymousBenchmarkingStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  - id: step_spotlight_anonymous_benchmarking_3
+    order: 3
+    action: document
+    actor: audit_manager
+    description: Document benchmarking analysis results and impact on overall audit conclusions
+    binding: guidance
+    command: document_spotlight_anonymous_benchmarking_step_3
+    emits: SpotlightAnonymousBenchmarkingStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - spotlight_full_population_je_analysis
+- id: iconfirm_confirmation_automation
+  phase: evidence_gathering
+  title: iConfirm External Confirmation Automation
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_iconfirm_confirmation_automation
+      emits: IconfirmConfirmationAutomationStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_iconfirm_confirmation_automation
+      emits: IconfirmConfirmationAutomationSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_iconfirm_confirmation_automation
+      emits: IconfirmConfirmationAutomationRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_iconfirm_confirmation_automation
+      emits: IconfirmConfirmationAutomationApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_iconfirm_confirmation_automation_1
+    order: 1
+    action: send
+    actor: audit_senior
+    description: Dispatch automated external confirmation requests via iConfirm platform to banks and counterparties
+    binding: guidance
+    command: send_iconfirm_confirmation_automation_step_1
+    emits: IconfirmConfirmationAutomationStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_iconfirm_confirmation_automation_2
+    order: 2
+    action: track
+    actor: audit_senior
+    description: Monitor confirmation response rates and automated follow-up on non-responses
+    binding: guidance
+    command: track_iconfirm_confirmation_automation_step_2
+    emits: IconfirmConfirmationAutomationStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Automated data extraction and validation
+    - Response tracking and alerting
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_iconfirm_confirmation_automation_3
+    order: 3
+    action: analyze
+    actor: audit_senior
+    description: Reconcile confirmed amounts against book values and identify discrepancies
+    binding: guidance
+    command: analyze_iconfirm_confirmation_automation_step_3
+    emits: IconfirmConfirmationAutomationStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Document comparison and reconciliation
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_iconfirm_confirmation_automation_4
+    order: 4
+    action: evaluate
+    actor: lead_audit_partner
+    description: Evaluate confirmation exceptions and determine alternative procedures for non-responses
+    binding: guidance
+    command: evaluate_iconfirm_confirmation_automation_step_4
+    emits: IconfirmConfirmationAutomationStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    standards: []
+  preconditions:
+  - proc_isa_505
+- id: omnia_genai_documentation_review
+  phase: reporting
+  title: Omnia GenAI Documentation Completeness Review
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_omnia_genai_documentation_review
+      emits: OmniaGenaiDocumentationReviewStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_omnia_genai_documentation_review
+      emits: OmniaGenaiDocumentationReviewSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_omnia_genai_documentation_review
+      emits: OmniaGenaiDocumentationReviewRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_omnia_genai_documentation_review
+      emits: OmniaGenaiDocumentationReviewApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_omnia_genai_documentation_review_1
+    order: 1
+    action: analyze
+    actor: audit_senior
+    description: Run GenAI-powered completeness scan of all workpapers against ISA documentation requirements
+    binding: guidance
+    command: analyze_omnia_genai_documentation_review_step_1
+    emits: OmniaGenaiDocumentationReviewStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Document comparison and reconciliation
+    - GenAI documentation analysis
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_omnia_genai_documentation_review_2
+    order: 2
+    action: analyze
+    actor: audit_senior
+    description: Check cross-referencing integrity between workpapers, evidence, and conclusions
+    binding: guidance
+    command: analyze_omnia_genai_documentation_review_step_2
+    emits: OmniaGenaiDocumentationReviewStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Document comparison and reconciliation
+    - Consistency checking across workpapers
+    human_responsibilities:
+    - Investigate flagged exceptions
+    standards: []
+  - id: step_omnia_genai_documentation_review_3
+    order: 3
+    action: evaluate
+    actor: lead_audit_partner
+    description: Review GenAI flagged documentation gaps and determine remediation actions
+    binding: guidance
+    command: evaluate_omnia_genai_documentation_review_step_3
+    emits: OmniaGenaiDocumentationReviewStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  preconditions:
+  - proc_isa_700
+- id: trustworthy_ai_governance_gate
+  phase: reporting
+  title: Trustworthy AI Governance Gate
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_trustworthy_ai_governance_gate
+      emits: TrustworthyAiGovernanceGateStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_trustworthy_ai_governance_gate
+      emits: TrustworthyAiGovernanceGateSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_trustworthy_ai_governance_gate
+      emits: TrustworthyAiGovernanceGateRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_trustworthy_ai_governance_gate
+      emits: TrustworthyAiGovernanceGateApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_trustworthy_ai_governance_gate_1
+    order: 1
+    action: verify
+    actor: lead_audit_partner
+    description: Validate all AI-generated outputs used in the engagement against Trustworthy AI framework requirements
+    binding: guidance
+    command: verify_trustworthy_ai_governance_gate_step_1
+    emits: TrustworthyAiGovernanceGateStep1Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_trustworthy_ai_governance_gate_2
+    order: 2
+    action: evaluate
+    actor: lead_audit_partner
+    description: Assess whether AI tool outputs were appropriately reviewed and that human judgment was applied to all conclusions
+    binding: guidance
+    command: evaluate_trustworthy_ai_governance_gate_step_2
+    emits: TrustworthyAiGovernanceGateStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Consistency checking across workpapers
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  - id: step_trustworthy_ai_governance_gate_3
+    order: 3
+    action: document
+    actor: audit_manager
+    description: Document AI governance review conclusions and sign-off on responsible AI compliance
+    binding: guidance
+    command: document_trustworthy_ai_governance_gate_step_3
+    emits: TrustworthyAiGovernanceGateStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Validate completeness and appropriateness
+    standards: []
+  preconditions:
+  - omnia_genai_documentation_review
