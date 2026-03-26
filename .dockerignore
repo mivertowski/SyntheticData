@@ -17,3 +17,7 @@ crates/datasynth-ui/build/
 crates/datasynth-ui/.svelte-kit/
 **/*.rs.bk
 **/*.pdb
+RustGraph
+.serena/
+docs-*.png
+*.png
