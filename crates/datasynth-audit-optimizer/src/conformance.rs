@@ -6,8 +6,13 @@
 
 use std::collections::{HashMap, HashSet};
 
+use datasynth_audit_fsm::context::EngagementContext;
+use datasynth_audit_fsm::engine::AuditFsmEngine;
 use datasynth_audit_fsm::event::AuditEvent;
-use datasynth_audit_fsm::schema::AuditBlueprint;
+use datasynth_audit_fsm::loader::BlueprintWithPreconditions;
+use datasynth_audit_fsm::schema::{AuditBlueprint, GenerationOverlay};
+use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 use serde::Serialize;
 
 // ---------------------------------------------------------------------------
@@ -21,10 +26,34 @@ pub struct ConformanceReport {
     pub fitness: f64,
     /// Fraction of defined transitions that were observed in the event trail.
     pub precision: f64,
+    /// Generalization score in `[0, 1]`. High values indicate the blueprint
+    /// produces consistent fitness across different seeds (low variance).
+    /// `None` if not computed (requires `compute_generalization`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub generalization: Option<f64>,
     /// Anomaly statistics.
     pub anomaly_stats: AnomalyStats,
     /// Per-procedure conformance breakdown.
     pub per_procedure: Vec<ProcedureConformance>,
+}
+
+/// Metrics for evaluating an external anomaly detector against ground-truth labels.
+#[derive(Debug, Clone, Serialize)]
+pub struct AnomalyDetectionMetrics {
+    /// Events correctly identified as anomalies.
+    pub true_positives: usize,
+    /// Events incorrectly identified as anomalies.
+    pub false_positives: usize,
+    /// Anomaly events missed by the detector.
+    pub false_negatives: usize,
+    /// True negatives: correctly identified normal events.
+    pub true_negatives: usize,
+    /// Precision = TP / (TP + FP).
+    pub precision: f64,
+    /// Recall = TP / (TP + FN).
+    pub recall: f64,
+    /// F1 = 2 * precision * recall / (precision + recall).
+    pub f1: f64,
 }
 
 /// Summary statistics about anomalies in the event trail.
@@ -186,8 +215,116 @@ pub fn analyze_conformance(events: &[AuditEvent], blueprint: &AuditBlueprint) ->
     ConformanceReport {
         fitness,
         precision,
+        generalization: None,
         anomaly_stats,
         per_procedure,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Generalization
+// ---------------------------------------------------------------------------
+
+/// Compute generalization: run the blueprint with 3 different seeds, measure
+/// fitness variance. Low variance = high generalization (score near 1.0).
+///
+/// Generalization = 1.0 - std_dev(fitness values across seeds).
+/// The result is clamped to [0, 1].
+pub fn compute_generalization(
+    bwp: &BlueprintWithPreconditions,
+    overlay: &GenerationOverlay,
+    blueprint: &AuditBlueprint,
+    base_seed: u64,
+) -> f64 {
+    let seeds = [
+        base_seed,
+        base_seed.wrapping_add(1000),
+        base_seed.wrapping_add(2000),
+    ];
+    let ctx = EngagementContext::test_default();
+    let mut fitness_values = Vec::new();
+
+    for seed in &seeds {
+        let rng = ChaCha8Rng::seed_from_u64(*seed);
+        let mut engine = AuditFsmEngine::new(bwp.clone(), overlay.clone(), rng);
+        if let Ok(result) = engine.run_engagement(&ctx) {
+            let report = analyze_conformance(&result.event_log, blueprint);
+            fitness_values.push(report.fitness);
+        }
+    }
+
+    if fitness_values.len() < 2 {
+        return 1.0; // Not enough data; assume perfect generalization.
+    }
+
+    let n = fitness_values.len() as f64;
+    let mean = fitness_values.iter().sum::<f64>() / n;
+    let variance = fitness_values
+        .iter()
+        .map(|f| (f - mean).powi(2))
+        .sum::<f64>()
+        / n;
+    let std_dev = variance.sqrt();
+
+    (1.0 - std_dev).clamp(0.0, 1.0)
+}
+
+// ---------------------------------------------------------------------------
+// Anomaly Detection Evaluation
+// ---------------------------------------------------------------------------
+
+/// Evaluate an external anomaly detector's predictions against ground-truth
+/// labels from the audit event trail.
+///
+/// `events` — the audit event trail with `is_anomaly` ground-truth labels.
+/// `predictions` — one boolean per event: `true` = "detector thinks anomaly".
+///
+/// Panics if `events.len() != predictions.len()`.
+pub fn evaluate_detector(events: &[AuditEvent], predictions: &[bool]) -> AnomalyDetectionMetrics {
+    assert_eq!(
+        events.len(),
+        predictions.len(),
+        "events and predictions must have the same length"
+    );
+
+    let mut tp = 0usize;
+    let mut fp = 0usize;
+    let mut fn_ = 0usize;
+    let mut tn = 0usize;
+
+    for (event, &predicted) in events.iter().zip(predictions.iter()) {
+        match (event.is_anomaly, predicted) {
+            (true, true) => tp += 1,
+            (false, true) => fp += 1,
+            (true, false) => fn_ += 1,
+            (false, false) => tn += 1,
+        }
+    }
+
+    let precision = if tp + fp > 0 {
+        tp as f64 / (tp + fp) as f64
+    } else {
+        0.0
+    };
+    let recall = if tp + fn_ > 0 {
+        tp as f64 / (tp + fn_) as f64
+    } else {
+        0.0
+    };
+    let f1 = if precision + recall > 0.0 {
+        2.0 * precision * recall / (precision + recall)
+    } else {
+        0.0
+    };
+
+    AnomalyDetectionMetrics {
+        true_positives: tp,
+        false_positives: fp,
+        false_negatives: fn_,
+        true_negatives: tn,
+        precision,
+        recall,
+        f1,
     }
 }
 
@@ -318,5 +455,64 @@ mod tests {
         assert!(deserialized.get("precision").is_some());
         assert!(deserialized.get("anomaly_stats").is_some());
         assert!(deserialized.get("per_procedure").is_some());
+    }
+
+    #[test]
+    fn test_generalization_score() {
+        let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
+        let bp = bwp.blueprint.clone();
+        let overlay = default_overlay();
+        let gen = compute_generalization(&bwp, &overlay, &bp, 42);
+
+        assert!(
+            gen >= 0.0 && gen <= 1.0,
+            "Generalization should be in [0, 1], got {}",
+            gen
+        );
+        // With deterministic FSM, fitness should be very consistent across seeds.
+        assert!(
+            gen > 0.8,
+            "Generalization should be > 0.8 for consistent FSM, got {}",
+            gen
+        );
+    }
+
+    #[test]
+    fn test_evaluate_detector_perfect() {
+        let (events, _bp) = run_fsa_engagement(BuiltinOverlay::Default, 42);
+        // Perfect detector: predictions match ground truth exactly.
+        let predictions: Vec<bool> = events.iter().map(|e| e.is_anomaly).collect();
+        let metrics = evaluate_detector(&events, &predictions);
+
+        assert!(
+            (metrics.f1 - 1.0).abs() < f64::EPSILON || metrics.true_positives == 0,
+            "Perfect detector should have F1=1.0 or no anomalies to detect"
+        );
+        assert_eq!(metrics.false_positives, 0);
+        assert_eq!(metrics.false_negatives, 0);
+    }
+
+    #[test]
+    fn test_evaluate_detector_all_positive() {
+        let (events, _bp) = run_fsa_engagement(BuiltinOverlay::Default, 42);
+        // Naive detector: predicts everything as anomaly.
+        let predictions = vec![true; events.len()];
+        let metrics = evaluate_detector(&events, &predictions);
+
+        // All actual anomalies found (FN=0) but many false positives.
+        assert_eq!(metrics.false_negatives, 0);
+        assert!(metrics.recall == 1.0 || metrics.true_positives == 0);
+    }
+
+    #[test]
+    fn test_evaluate_detector_serializes() {
+        let (events, _bp) = run_fsa_engagement(BuiltinOverlay::Default, 42);
+        let predictions: Vec<bool> = events.iter().map(|e| e.is_anomaly).collect();
+        let metrics = evaluate_detector(&events, &predictions);
+
+        let json = serde_json::to_string(&metrics).unwrap();
+        assert!(json.contains("f1"));
+        assert!(json.contains("precision"));
+        assert!(json.contains("recall"));
     }
 }
