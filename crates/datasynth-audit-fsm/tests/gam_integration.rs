@@ -79,6 +79,7 @@ fn test_gam_command_prefix_coverage() {
     let mut total = 0usize;
     let mut prefix_matched = 0usize;
     let prefixes = [
+        // Layer 1: core audit verbs
         "provide_",
         "document_",
         "prepare_",
@@ -111,6 +112,49 @@ fn test_gam_command_prefix_coverage() {
         "sign_",
         "authorize_",
         "also_",
+        // Layer 2: GAM-specific verbs
+        "use_",
+        "include_",
+        "can_",
+        "apply_",
+        "address_",
+        "focus_",
+        "will_",
+        "need_",
+        "require_",
+        "has_",
+        "is_",
+        "necessary_",
+        "identified_",
+        // Layer 3: ISA 315 understanding & inquiry
+        "understand_",
+        "inquire_",
+        "observe_",
+        // Layer 4: discussion, collaboration & professional judgment
+        "discuss_",
+        "agree_",
+        "instruct_",
+        "exercise_",
+        "coordinate_",
+        // Layer 5: design & planning
+        "design_",
+        "plan_",
+        "develop_",
+        "select_",
+        "establish_",
+        // Layer 6: doing, verification & recording
+        "do_",
+        "make_",
+        "update_",
+        "reperform_",
+        "verify_",
+        "analyze_",
+        "record_",
+        "describe_",
+        "reflect_",
+        "support_",
+        // Layer 7: conditional/advisory
+        "may_",
     ];
 
     for phase in &bwp.blueprint.phases {
@@ -132,8 +176,8 @@ fn test_gam_command_prefix_coverage() {
         prefix_matched, total, pct
     );
     assert!(
-        pct >= 60.0,
-        "Expected >= 60% prefix coverage, got {:.1}%",
+        pct >= 95.0,
+        "Expected >= 95% prefix coverage, got {:.1}%",
         pct
     );
 }

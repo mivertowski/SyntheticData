@@ -477,8 +477,77 @@ impl StepDispatcher {
             {
                 self.dispatch_judgment(context, bag);
             }
-            _ if cmd.starts_with("also_") => {
-                // GAM "also" commands are continuation steps — produce workpaper
+            _ if cmd.starts_with("also_")
+                || cmd.starts_with("use_")
+                || cmd.starts_with("include_")
+                || cmd.starts_with("can_")
+                || cmd.starts_with("apply_")
+                || cmd.starts_with("address_")
+                || cmd.starts_with("focus_")
+                || cmd.starts_with("will_")
+                || cmd.starts_with("need_")
+                || cmd.starts_with("require_")
+                || cmd.starts_with("has_")
+                || cmd.starts_with("is_")
+                || cmd.starts_with("necessary_")
+                || cmd.starts_with("identified_") =>
+            {
+                // GAM auxiliary/continuation steps — produce workpaper
+                self.dispatch_workpaper(step, procedure_id, context, bag);
+            }
+
+            // ----- GAM: understanding & inquiry (ISA 315) -----
+            _ if cmd.starts_with("understand_")
+                || cmd.starts_with("inquire_")
+                || cmd.starts_with("observe_") =>
+            {
+                self.dispatch_risk_assessment(context, bag);
+            }
+
+            // ----- GAM: discussion, collaboration & professional judgment -----
+            _ if cmd.starts_with("discuss_")
+                || cmd.starts_with("agree_")
+                || cmd.starts_with("instruct_")
+                || cmd.starts_with("exercise_")
+                || cmd.starts_with("coordinate_") =>
+            {
+                self.dispatch_judgment(context, bag);
+            }
+
+            // ----- GAM: design & planning -----
+            _ if cmd.starts_with("design_")
+                || cmd.starts_with("plan_")
+                || cmd.starts_with("develop_")
+                || cmd.starts_with("select_")
+                || cmd.starts_with("establish_") =>
+            {
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Planning,
+                );
+            }
+
+            // ----- GAM: doing, updating & recording -----
+            _ if cmd.starts_with("do_")
+                || cmd.starts_with("make_")
+                || cmd.starts_with("update_")
+                || cmd.starts_with("reperform_")
+                || cmd.starts_with("verify_")
+                || cmd.starts_with("analyze_")
+                || cmd.starts_with("record_")
+                || cmd.starts_with("describe_")
+                || cmd.starts_with("reflect_")
+                || cmd.starts_with("support_") =>
+            {
+                self.dispatch_sampling(context, bag);
+            }
+
+            // ----- GAM: conditional/advisory (may_) -----
+            _ if cmd.starts_with("may_") => {
+                // "may_" commands are optional/conditional steps in GAM
                 self.dispatch_workpaper(step, procedure_id, context, bag);
             }
 
