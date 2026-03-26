@@ -148,6 +148,8 @@ pub enum GeneratorType {
     ManagementReport = 0x4D,
     /// Prior-year comparative data generator (WI-2)
     PriorYear = 0x4E,
+    /// Legal document generator (GAM audit engagement support)
+    LegalDocument = 0x4F,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

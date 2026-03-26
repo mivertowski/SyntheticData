@@ -132,6 +132,9 @@ pub mod compliance;
 // Industry benchmark models (WI-3)
 mod industry_benchmark;
 
+// Legal document models (GAM audit engagement support)
+mod legal_document;
+
 // Governance models — board minutes (WI-5)
 mod governance;
 
@@ -241,6 +244,9 @@ pub use generation_session::*;
 
 // Industry benchmark exports (WI-3)
 pub use industry_benchmark::*;
+
+// Legal document exports (GAM audit engagement)
+pub use legal_document::*;
 
 // Governance exports (WI-5)
 pub use governance::*;
