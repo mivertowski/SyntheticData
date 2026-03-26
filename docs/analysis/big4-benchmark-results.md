@@ -11,25 +11,36 @@ The **KPMG Clara, PwC Aura, and Deloitte Omnia** blueprints are **derived from p
 
 ## Results (Firm-Enriched Blueprints)
 
+### Cross-Firm Comparison (ISA-based, comparable scale)
+
 | Firm | Phases | Procs | Steps | Events | Artifacts | Hours | Anomalies | Compl% | Data% | AI% | Human% |
 |------|--------|-------|-------|--------|-----------|-------|-----------|--------|-------|-----|--------|
 | Generic ISA | 3 | 9 | 24 | 51 | 2,012 | 731 | 2 | 100% | 17% | 29% | 54% |
 | KPMG Clara | 7 | 44 | 728 | 891 | 30,371 | 4,013 | 77 | 100% | 11% | 13% | 75% |
 | PwC Aura | 7 | 44 | 729 | 976 | 37,055 | 4,144 | 93 | 100% | 11% | 13% | 76% |
 | Deloitte Omnia | 7 | 46 | 733 | 958 | 34,236 | 4,448 | 89 | 100% | 12% | 14% | 74% |
+| **EY GAM Lite** | **7** | **52** | **757** | **955** | **44,641** | **4,587** | **80** | **100%** | **11%** | **14%** | **74%** |
 | IIA-GIAS | 9 | 34 | 82 | 205 | 3,814 | 2,737 | 12 | 100% | 6% | 67% | 27% |
-| **EY GAM** | **8** | **1,182** | **3,035** | **7,731** | **367,090** | **N/A** | **372** | **100%** | **~40%** | **~36%** | **~24%** |
+
+### EY GAM Full (proprietary, not shareable)
+
+| Firm | Phases | Procs | Steps | Events | Artifacts | Hours | Anomalies | Compl% | Data% | AI% | Human% |
+|------|--------|-------|-------|--------|-----------|-------|-----------|--------|-------|-----|--------|
+| **EY GAM Full** | **8** | **1,182** | **3,035** | **7,731** | **367,090** | **N/A** | **372** | **100%** | **~40%** | **~36%** | **~24%** |
+
+*EY GAM Full is scraped from EY Atlas and contains proprietary methodology content. It is not included in the shareable blueprint set. EY GAM Lite provides a comparable ISA-based + EY-specific alternative suitable for benchmarking and distribution.*
 
 ## Blueprint Composition
 
-| Blueprint | ISA Base | Firm-Specific Extra | Source |
-|-----------|----------|-------------------|--------|
-| Generic ISA | 9 hand-crafted procedures | — | Manual ISA mapping |
-| KPMG Clara | 37 ISA standards (702 steps) | +7 procedures (26 steps): Sentinel, BPM, MindBridge scoring, SoD analysis, forensic analytics, EQCR, FRA | ISA standards + public KPMG documentation |
-| PwC Aura | 37 ISA standards (702 steps) | +7 procedures (27 steps): FRISK 13-factor, Halo journal/population/3-way/outlier, QRP review, ECR | ISA standards + public PwC documentation |
-| Deloitte Omnia | 37 ISA standards (702 steps) | +9 procedures (31 steps): Cortex, Argus, DARTbot, Spotlight scoring/JE/benchmarking, iConfirm, Omnia GenAI, Trustworthy AI | ISA standards + public Deloitte documentation |
-| IIA-GIAS | 34 hand-crafted procedures | — | Manual IIA-GIAS mapping (96.2% coverage) |
-| **EY GAM** | **1,182 scraped procedures** | **N/A (native)** | **Extracted from EY Atlas platform** |
+| Blueprint | ISA Base | Firm-Specific Extra | Source | Shareable? |
+|-----------|----------|-------------------|--------|------------|
+| Generic ISA | 9 hand-crafted procedures | — | Manual ISA mapping | Yes |
+| KPMG Clara | 37 ISA standards (702 steps) | +7 procedures (26 steps): Sentinel, BPM, MindBridge scoring, SoD analysis, forensic analytics, EQCR, FRA | ISA standards + public KPMG documentation | Yes |
+| PwC Aura | 37 ISA standards (702 steps) | +7 procedures (27 steps): FRISK 13-factor, Halo journal/population/3-way/outlier, QRP review, ECR | ISA standards + public PwC documentation | Yes |
+| Deloitte Omnia | 37 ISA standards (702 steps) | +9 procedures (31 steps): Cortex, Argus, DARTbot, Spotlight scoring/JE/benchmarking, iConfirm, Omnia GenAI, Trustworthy AI | ISA standards + public Deloitte documentation | Yes |
+| **EY GAM Lite** | **37 ISA standards (702 steps)** | **+8 procedures (29 steps): Canvas risk/materiality, Atlas methodology, Helix analytics, specialist coordination, EQR, digital audit, GAM compliance** | **ISA standards + public EY documentation** | **Yes** |
+| IIA-GIAS | 34 hand-crafted procedures | — | Manual IIA-GIAS mapping (96.2% coverage) | Yes |
+| **EY GAM Full** | **1,182 scraped procedures** | **N/A (native)** | **Extracted from EY Atlas platform** | **No (proprietary)** |
 
 ## Structural Analysis
 
