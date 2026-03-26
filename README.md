@@ -160,20 +160,36 @@ Two built-in blueprints are included:
 | Blueprint | Procedures | Phases | Steps | Standards | Events | Artifacts |
 |-----------|-----------|--------|-------|-----------|--------|-----------|
 | Financial Statement Audit (FSA) | 9 | 3 | 24 | 14 ISA | 51 | 1,916 |
-| Internal Audit (IA) | 34 | 9 | 82 | 52 IIA-GIAS | 368 | 1,891 |
+| Internal Audit (IA) | 34 | 9 | 82 | 52 IIA-GIAS | 205 | 3,808 |
 
 Additional methodology blueprints are available at [SyntheticDataBlueprints](https://github.com/mivertowski/SyntheticDataBlueprints).
 
-The **StepDispatcher** bridges FSM step commands to 14 concrete audit generators (engagement, materiality, risk, CRA, workpaper, evidence, sampling, analytical procedures, confirmations, going concern, subsequent events, findings, and opinion). Every step produces at least one typed artifact; unknown commands fall through to a generic workpaper generator.
+The **StepDispatcher** maps all 140 step commands to 14 concrete audit generators, enriched by the **analytics inventory** (87 data requirements + 71 analytical procedures from the AuditMethodology repo) and the **form ontology** (4,437 canonical field categories). Every step produces typed artifacts with data-driven content: findings cite specific journal entries, workpapers reference applicable ISA paragraphs, and evidence descriptions include expected form fields.
+
+**100% audit data coverage** — all 14 data types and 14 analytical procedures required by FSA audit steps are fully generated:
+
+| Category | Data Types |
+|----------|-----------|
+| Core financial | General ledger, journal entries (with ISA 240 flags), financial statements (with comparatives), sub-ledgers |
+| External evidence | Bank statements, confirmations, contracts, estimates |
+| Year-over-year | Prior-year comparatives, prior-year findings with remediation tracking |
+| Reference data | Industry benchmarks (10 metrics/industry), organizational profile (IT systems, regulatory env) |
+| Governance | Board minutes (quarterly + audit committee), management reports (KPI/RAG/budget) |
+| IT controls | Access logs (business-hour weighting), change management records (approval gap correlation) |
 
 **Key features:**
 - 8-state C2CE (Condition-Criteria-Cause-Effect) lifecycle for finding development
 - Self-loop handling with configurable max iterations for follow-up procedures
 - Continuous phase support for parallel execution (ethics, governance, quality)
 - Discriminator-based procedure filtering (categories, risk ratings, engagement types)
-- Generation overlay presets: `default`, `thorough`, `rushed`
-- Flat JSON audit event trail and OCEL 2.0 projection exports
-- Auto-bootstrap for IA blueprints (creates engagement on first substantive command)
+- Generation overlay presets: `default`, `thorough`, `rushed` with cost model (base hours + role rates)
+- Export formats: flat JSON, CSV (Disco/Celonis), XES 2.0 (ProM/pm4py), OCEL 2.0
+- Benchmark datasets: simple/medium/complex with configurable anomaly injection
+- Conformance metrics: fitness, precision, per-procedure analysis
+- Overlay parameter fitting from target engagement profiles
+- Blueprint discovery from event logs (alpha miner variant)
+- Pluggable LLM content generation (`--features claude-content` for Claude CLI adapter)
+- CLI: `datasynth-data audit validate|info|run|benchmark`
 
 ```yaml
 # Enable FSM-driven audit generation
@@ -202,7 +218,15 @@ let result = engine.run_engagement(&EngagementContext::test_default()).unwrap();
 println!("Events: {}, Artifacts: {}", result.event_log.len(), result.artifacts.total_artifacts());
 ```
 
-The companion `datasynth-audit-optimizer` crate converts blueprints into petgraph directed graphs for shortest-path analysis (FSA: 27 min transitions, IA: 101), constraint-based path optimization, and Monte Carlo simulation (bottleneck detection, revision hotspots, happy path identification).
+The companion `datasynth-audit-optimizer` crate provides:
+- **Graph analysis**: blueprint → petgraph conversion, shortest path (FSA: 27, IA: 101 min transitions)
+- **Resource-constrained optimization**: budget/role-aware audit plan selection with coverage reporting
+- **Risk-based scoping**: standards/risk coverage analysis, what-if procedure removal impact
+- **Portfolio simulation**: multi-engagement with shared resources, scheduling conflicts, systemic findings
+- **Conformance metrics**: fitness, precision, anomaly detection statistics
+- **Overlay fitting**: iterative parameter search from target engagement profiles
+- **Blueprint discovery**: infer methodology from event logs (alpha miner), compare against reference
+- **Anomaly calibration**: auto-tune injection rates to target detection difficulty
 
 For a deep dive, see the [Audit FSM Engine documentation](https://mivertowski.github.io/SyntheticData/advanced/audit-fsm-engine.html).
 
@@ -295,7 +319,7 @@ For a deep dive, see the [Audit FSM Engine documentation](https://mivertowski.gi
 
 ## Architecture
 
-DataSynth is a Rust workspace organized into 18 modular crates:
+DataSynth is a Rust workspace organized into 19 modular crates:
 
 ```
 datasynth-cli            CLI binary (generate, validate, init, info, fingerprint, scenario)

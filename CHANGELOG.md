@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-25
+
+### Added
+
+#### Wave 1: Consolidation
+- **CLI `audit` subcommand**: `datasynth-data audit validate|info|run` for blueprint inspection, validation, and standalone FSM execution
+- **Demo mode FSM**: `--demo` now exercises the FSM engine with FSA blueprint
+- **IA dispatch 100% coverage**: all 140 IA step commands mapped to generators (was 43)
+- **Graph evidence-chain edges**: 3 new audit node types (MaterialityCalculation, AuditOpinion, GoingConcernAssessment) and 6 edge types (DOCUMENTED_BY, IDENTIFIED_FROM, OPINION_BASED_ON, OPINION_FOR_ENGAGEMENT, MATERIALITY_FOR_ENGAGEMENT, GC_FOR_ENGAGEMENT)
+
+#### Wave 2: Audit Planning Optimization
+- **Per-procedure iteration limits**: configurable via overlay (default 50), IA completion 22/34 → 34/34 (100%)
+- **Cost model**: blueprint `base_hours` on all 43 procedures + overlay `cost_multiplier` + `role_hourly_rates` for 8 roles
+- **Resource-constrained optimization**: greedy knapsack with precondition expansion, budget/coverage/critical-path reporting
+- **Risk-based scoping**: standards and risk coverage analysis, what-if procedure removal impact
+- **Multi-engagement portfolio simulation**: shared resource pools, scheduling conflict detection, systemic finding propagation, risk heatmap
+
+#### Wave 3: Process Mining Benchmarks
+- **CSV export**: flat event log for Disco, Celonis, Minit (`export/csv.rs`)
+- **XES 2.0 export**: IEEE-standard XML for ProM, pm4py (`export/xes.rs`)
+- **Benchmark dataset generator**: simple (FSA, no anomalies), medium (FSA, rushed), complex (IA) with configurable anomaly rates
+- **CLI `audit benchmark`**: generate benchmark datasets with `--complexity simple|medium|complex`
+- **Conformance metrics**: fitness (FSA=1.00, IA=1.00), precision (FSA=0.93, IA=0.89), per-procedure breakdown, anomaly statistics
+
+#### Wave 4: Learned & Adaptive Generation
+- **Overlay parameter fitting**: iterative search from target engagement profile (duration, findings, revisions, anomalies) — converges in 5-20 iterations
+- **Blueprint discovery**: infer procedure state machines from event logs (alpha miner variant) — FSA 9/9 and IA 34/34 procedures recovered at conformance=1.00
+- **Adaptive anomaly calibration**: auto-tune injection rates to target difficulty level
+- **ContentGenerator trait**: pluggable interface for LLM-augmented artifact narratives with `TemplateContentGenerator` default
+- **Claude CLI adapter**: `--features claude-content` enables Claude-powered ISA-grounded finding/workpaper/response narratives
+
+#### Artifact Coherence & Analytics Integration
+- **EngagementContext enrichment**: journal entry IDs, account balances, control IDs, anomaly refs for cross-referencing
+- **Analytics inventory integration**: FSA (40 steps, 87 data requirements, 71 analytical procedures) and IA (20 steps, 29 data requirements, 20 analytical procedures) from AuditMethodology repo
+- **Form ontology**: 4,437 canonical field categories for evidence template enrichment
+- **Data-driven content**: StepDispatcher enriches artifacts with data requirement summaries and analytical procedure narratives
+
+#### Audit Data Completeness (14/14 data types, 14/14 analytical procedures)
+- **JE audit flags** (WI-1): `is_manual`, `is_post_close`, `source_system`, `created_date` for ISA 240 fraud testing — 5% manual rate with period-end spike
+- **Prior-year data** (WI-2): `PriorYearComparative` with Benford-compliant prior amounts, `PriorYearFinding` with status tracking, `PriorYearSummary` with opinion/materiality/KAMs
+- **Industry benchmarks** (WI-3): 10 metrics per industry preset (retail, manufacturing, financial_services)
+- **IT system reports** (WI-4): `AccessLog` with business-hour weighting and failed-login clustering, `ChangeManagementRecord` with approval gaps for ITGC testing
+- **Board minutes** (WI-5): quarterly board + monthly audit committee meetings with decisions, risk discussions, attendees
+- **Organizational profile** (WI-6): IT systems per industry, regulatory environment, prior auditor
+- **Management reports** (WI-7): flash reports, monthly packs, board reports with KPI/RAG status and budget variances
+- **FS comparative fields** (WI-8): `prior_year_amount` and `assumptions` on FinancialStatementLineItem
+
+### Changed
+- Workspace version bumped to 2.0.0 (19 crates)
+- Python package version bumped to 2.0.0
+- Engine state-name detection generalized (supports "active", "drafting" in addition to "in_progress")
+- Forward/backward transition detection uses state-index ordering (not hardcoded terminal names)
+- `default_overlay()` now loads from YAML (not Rust defaults)
+
+### Fixed
+- IA completion rate: 22/34 (65%) → 34/34 (100%) via iteration limit increase + state-name generalization + state-index ordering fix
+- Unused variables in `subsequent_event_generator`, `going_concern_generator`, `sox_generator` tests
+
+---
+
 ## [1.5.0] - 2026-03-24
 
 ### Added
