@@ -20,6 +20,15 @@ const BUILTIN_FSA: &str = include_str!("../blueprints/generic_fsa.yaml");
 /// The built-in generic Internal Audit (IIA-GIAS) blueprint.
 const BUILTIN_IA: &str = include_str!("../blueprints/generic_ia.yaml");
 
+/// The built-in KPMG Clara-style ISA Financial Statement Audit blueprint.
+const BUILTIN_KPMG: &str = include_str!("../blueprints/kpmg_fsa.yaml");
+
+/// The built-in PwC-style ISA Financial Statement Audit blueprint.
+const BUILTIN_PWC: &str = include_str!("../blueprints/pwc_fsa.yaml");
+
+/// The built-in Deloitte-style ISA Financial Statement Audit blueprint.
+const BUILTIN_DELOITTE: &str = include_str!("../blueprints/deloitte_fsa.yaml");
+
 // ---------------------------------------------------------------------------
 // Built-in overlay YAML
 // ---------------------------------------------------------------------------
@@ -55,6 +64,12 @@ pub enum BuiltinBlueprint {
     Fsa,
     /// Generic IIA-GIAS Internal Audit.
     Ia,
+    /// KPMG Clara-style ISA Financial Statement Audit.
+    Kpmg,
+    /// PwC-style ISA Financial Statement Audit.
+    Pwc,
+    /// Deloitte-style ISA Financial Statement Audit.
+    Deloitte,
 }
 
 /// Identifies the source of a generation overlay.
@@ -286,6 +301,14 @@ mod raw {
         pub standards: Vec<RawStepStandard>,
         #[serde(default)]
         pub decisions: Vec<RawDecision>,
+
+        // ----- Judgment / AI interaction fields -----
+        #[serde(default)]
+        pub judgment_level: Option<String>,
+        #[serde(default)]
+        pub ai_capabilities: Vec<String>,
+        #[serde(default)]
+        pub human_responsibilities: Vec<String>,
 
         // ----- GAM-specific step fields -----
         #[serde(default)]
@@ -633,6 +656,9 @@ fn convert_raw_step(step: raw::RawStep, _preconditions: &[String]) -> BlueprintS
         evidence: evidence_items,
         standards: step_standards,
         decision,
+        judgment_level: step.judgment_level,
+        ai_capabilities: step.ai_capabilities,
+        human_responsibilities: step.human_responsibilities,
         isa_mandate: step.isa_mandate,
         form_refs: step.form_refs,
         deliverable_fields: step.deliverable_fields,
@@ -672,6 +698,9 @@ pub fn load_blueprint(source: &BlueprintSource) -> Result<AuditBlueprint, AuditF
             let yaml = match builtin {
                 BuiltinBlueprint::Fsa => BUILTIN_FSA,
                 BuiltinBlueprint::Ia => BUILTIN_IA,
+                BuiltinBlueprint::Kpmg => BUILTIN_KPMG,
+                BuiltinBlueprint::Pwc => BUILTIN_PWC,
+                BuiltinBlueprint::Deloitte => BUILTIN_DELOITTE,
             };
             parse_blueprint(yaml)
         }
@@ -1018,12 +1047,17 @@ fn extract_preconditions_from_yaml(
 
 /// Extract preconditions map from the blueprint by re-parsing the builtin YAML.
 ///
-/// Detects which builtin YAML to use based on the blueprint's methodology framework.
+/// Detects which builtin YAML to use based on the blueprint's methodology
+/// framework and name.
 fn extract_preconditions_from_builtin(
     bp: &AuditBlueprint,
 ) -> Result<HashMap<String, Vec<String>>, AuditFsmError> {
+    let name = bp.name.as_str();
     let yaml = match bp.methodology.framework.as_str() {
         "IIA-GIAS" => BUILTIN_IA,
+        "ISA" if name.contains("KPMG") => BUILTIN_KPMG,
+        "ISA" if name.contains("PwC") => BUILTIN_PWC,
+        "ISA" if name.contains("Deloitte") => BUILTIN_DELOITTE,
         _ => BUILTIN_FSA,
     };
     extract_preconditions_from_yaml(yaml, bp)
@@ -1060,6 +1094,36 @@ impl BlueprintWithPreconditions {
     /// Load from the builtin IA (IIA-GIAS) blueprint.
     pub fn load_builtin_ia() -> Result<Self, AuditFsmError> {
         let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Ia))?;
+        let preconditions = extract_preconditions_from_builtin(&bp)?;
+        Ok(Self {
+            blueprint: bp,
+            preconditions,
+        })
+    }
+
+    /// Load from the builtin KPMG Clara-style ISA blueprint.
+    pub fn load_builtin_kpmg() -> Result<Self, AuditFsmError> {
+        let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Kpmg))?;
+        let preconditions = extract_preconditions_from_builtin(&bp)?;
+        Ok(Self {
+            blueprint: bp,
+            preconditions,
+        })
+    }
+
+    /// Load from the builtin PwC-style ISA blueprint.
+    pub fn load_builtin_pwc() -> Result<Self, AuditFsmError> {
+        let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Pwc))?;
+        let preconditions = extract_preconditions_from_builtin(&bp)?;
+        Ok(Self {
+            blueprint: bp,
+            preconditions,
+        })
+    }
+
+    /// Load from the builtin Deloitte-style ISA blueprint.
+    pub fn load_builtin_deloitte() -> Result<Self, AuditFsmError> {
+        let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Deloitte))?;
         let preconditions = extract_preconditions_from_builtin(&bp)?;
         Ok(Self {
             blueprint: bp,
