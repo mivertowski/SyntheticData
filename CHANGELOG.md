@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Wave 5: Enterprise Platform
+- **Year-over-year engagement chains**: sequential engagements with configurable finding carry-forward rate and trend tracking
+- **Group audit (ISA 600)**: component auditors (Significant/NonSignificant/NotInScope) with independent FSM execution and consolidated reporting
+- **Blueprint testing framework**: automated validation with `test_blueprint()` and `test_all_builtins()` convenience function
+- **SOC 2 Type II blueprint**: AICPA Trust Services Criteria (12 procedures, 5 trust categories, AT-C standards)
+- **PCAOB integrated audit blueprint**: US public company audit (14 procedures, AS 2201 ICFR + AS 3101 CAMs + dual opinions)
+- **Regulatory banking examination blueprint**: OCC/FFIEC supervision exam (15 procedures, CAMELS rating, BSA/AML, capital adequacy)
+- **Streaming engagement execution**: callback-based + channel-based event emission for real-time dashboard integration
+- **Live anomaly injection**: inject anomalies into existing event logs at runtime for emerging risk simulation
+- **10 blueprints** total: Generic FSA, IIA-GIAS, KPMG Clara, PwC Aura, Deloitte Omnia, EY GAM Lite, EY GAM Full, SOC 2 Type II, PCAOB Integrated, Regulatory Exam
+
 #### GAM Blueprint Integration
 - **EY Global Audit Methodology (GAM)**: 1,182 procedures, 3,035 steps, 518 standards, 1,702 evidence templates — the full EY methodology runs end-to-end
 - **100% command dispatch coverage** across all three blueprints (FSA 24/24, IA 82/82, GAM 3,035/3,035) via 60 verb prefix patterns
