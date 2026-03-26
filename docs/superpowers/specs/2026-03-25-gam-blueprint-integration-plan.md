@@ -1,7 +1,7 @@
 # GAM Blueprint Integration Plan
 
 **Date**: 2026-03-25
-**Status**: Pending (blocked on AuditMethodology repo alignment)
+**Status**: Unblocked (AuditMethodology fixes applied: commit 5a1095d)
 **Scope**: Load and run the full EY GAM blueprint (1,182 procedures, 3,035 steps) in the FSM engine.
 
 ## Pre-requisites (AuditMethodology Repo)
