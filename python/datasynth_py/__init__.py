@@ -8,6 +8,7 @@ from datasynth_py.config.models import (
     AccountingStandardsConfig,
     AnalyticalProceduresConfig,
     AuditOpinionConfig,
+    AuditFsmSettings,
     AuditSettings,
     AuditStandardsConfig,
     BankingSettings,

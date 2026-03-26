@@ -209,6 +209,28 @@ class OcpmSettings:
 
 
 @dataclass(frozen=True)
+class AuditFsmSettings:
+    """FSM-driven audit generation settings.
+
+    When enabled, the FSM engine loads a methodology blueprint and generates
+    audit artifacts alongside event trails. Replaces standalone audit generators.
+
+    Available blueprints: builtin:fsa, builtin:ia, builtin:kpmg, builtin:pwc,
+    builtin:deloitte, builtin:ey_gam_lite, builtin:soc2, builtin:pcaob,
+    builtin:regulatory, or a path to a custom YAML blueprint.
+
+    Available overlays: builtin:default, builtin:thorough, builtin:rushed,
+    builtin:retail, builtin:manufacturing, builtin:financial_services.
+    """
+
+    enabled: bool = False
+    blueprint: str = "builtin:fsa"
+    overlay: str = "builtin:default"
+    depth: Optional[str] = None
+    seed: Optional[int] = None
+
+
+@dataclass(frozen=True)
 class AuditSettings:
     """Audit data generation settings."""
 
@@ -218,6 +240,7 @@ class AuditSettings:
     evidence_per_workpaper: int = 5
     risks_per_engagement: int = 15
     findings_per_engagement: int = 8
+    fsm: Optional[AuditFsmSettings] = None
 
 
 @dataclass(frozen=True)
@@ -1200,6 +1223,12 @@ class Config:
 
         if self.audit is not None:
             audit_dict = _strip_none(self.audit.__dict__)
+            if self.audit.fsm is not None:
+                fsm_dict = _strip_none(self.audit.fsm.__dict__)
+                if fsm_dict:
+                    audit_dict["fsm"] = fsm_dict
+            if "fsm" in audit_dict and audit_dict["fsm"] is None:
+                del audit_dict["fsm"]
             if audit_dict:
                 payload["audit"] = audit_dict
 
