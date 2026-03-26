@@ -13,6 +13,7 @@ categories.workspace = true
 [dependencies]
 datasynth-audit-fsm = { workspace = true }
 petgraph = { workspace = true }
+rust_decimal = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }

@@ -6,6 +6,7 @@ pub mod conformance;
 pub mod constrained;
 pub mod discovery;
 pub mod graph;
+pub mod group_audit;
 pub mod monte_carlo;
 pub mod overlay_fitting;
 pub mod portfolio;
