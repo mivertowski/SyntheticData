@@ -140,31 +140,31 @@ fn test_load_kpmg_blueprint() {
     // Validates without error
     bwp.validate().expect("KPMG blueprint must be valid");
 
-    // >= 5 phases
+    // 7 phases (ISA-complete blueprint)
     assert!(
-        bwp.blueprint.phases.len() >= 5,
-        "KPMG expected >= 5 phases, got {}",
+        bwp.blueprint.phases.len() >= 7,
+        "KPMG expected >= 7 phases, got {}",
         bwp.blueprint.phases.len()
     );
 
-    // >= 9 procedures (9 + EQR = 10)
+    // 37 procedures (one per ISA standard)
     let proc_count = count_procedures(&bwp.blueprint);
     assert!(
-        proc_count >= 9,
-        "KPMG expected >= 9 procedures, got {}",
+        proc_count >= 37,
+        "KPMG expected >= 37 procedures, got {}",
         proc_count
     );
 
-    // Has the engagement_quality_review procedure
-    let has_eqr = bwp
+    // Has the ISA 220 Quality Management procedure
+    let has_quality = bwp
         .blueprint
         .phases
         .iter()
         .flat_map(|p| &p.procedures)
-        .any(|proc| proc.id == "engagement_quality_review");
+        .any(|proc| proc.id == "proc_isa_220");
     assert!(
-        has_eqr,
-        "KPMG must have engagement_quality_review procedure"
+        has_quality,
+        "KPMG must have proc_isa_220 (ISA 220 Quality Management) procedure"
     );
 
     // Framework is ISA
@@ -182,31 +182,31 @@ fn test_load_pwc_blueprint() {
     // Validates without error
     bwp.validate().expect("PwC blueprint must be valid");
 
-    // >= 7 phases
+    // 7 phases (ISA-complete blueprint with halo_analytics as 7th phase)
     assert!(
         bwp.blueprint.phases.len() >= 7,
         "PwC expected >= 7 phases, got {}",
         bwp.blueprint.phases.len()
     );
 
-    // >= 9 procedures
+    // 37 procedures (one per ISA standard)
     let proc_count = count_procedures(&bwp.blueprint);
     assert!(
-        proc_count >= 9,
-        "PwC expected >= 9 procedures, got {}",
+        proc_count >= 37,
+        "PwC expected >= 37 procedures, got {}",
         proc_count
     );
 
-    // Has halo analytics procedure
-    let has_halo = bwp
+    // Has ISA 520 Analytical Procedures procedure
+    let has_analytical = bwp
         .blueprint
         .phases
         .iter()
         .flat_map(|p| &p.procedures)
-        .any(|proc| proc.id == "halo_analytical_procedures");
+        .any(|proc| proc.id == "proc_isa_520");
     assert!(
-        has_halo,
-        "PwC must have halo_analytical_procedures procedure"
+        has_analytical,
+        "PwC must have proc_isa_520 (ISA 520 Analytical Procedures) procedure"
     );
 
     // Framework is ISA
@@ -225,31 +225,31 @@ fn test_load_deloitte_blueprint() {
     // Validates without error
     bwp.validate().expect("Deloitte blueprint must be valid");
 
-    // >= 8 phases
+    // 7 phases (ISA-complete blueprint with cognitive_review as 7th phase)
     assert!(
-        bwp.blueprint.phases.len() >= 8,
-        "Deloitte expected >= 8 phases, got {}",
+        bwp.blueprint.phases.len() >= 7,
+        "Deloitte expected >= 7 phases, got {}",
         bwp.blueprint.phases.len()
     );
 
-    // >= 9 procedures
+    // 37 procedures (one per ISA standard)
     let proc_count = count_procedures(&bwp.blueprint);
     assert!(
-        proc_count >= 9,
-        "Deloitte expected >= 9 procedures, got {}",
+        proc_count >= 37,
+        "Deloitte expected >= 37 procedures, got {}",
         proc_count
     );
 
-    // Has cognitive technology procedure
-    let has_cognitive = bwp
+    // Has ISA 315 Risk Assessment procedure
+    let has_risk = bwp
         .blueprint
         .phases
         .iter()
         .flat_map(|p| &p.procedures)
-        .any(|proc| proc.id == "cognitive_analytical_procedures");
+        .any(|proc| proc.id == "proc_isa_315");
     assert!(
-        has_cognitive,
-        "Deloitte must have cognitive_analytical_procedures procedure"
+        has_risk,
+        "Deloitte must have proc_isa_315 (ISA 315 Risk Assessment) procedure"
     );
 
     // Framework is ISA
@@ -436,18 +436,26 @@ fn test_big4_blueprints_have_distinct_structures() {
     let pwc = BlueprintWithPreconditions::load_builtin_pwc().unwrap();
     let deloitte = BlueprintWithPreconditions::load_builtin_deloitte().unwrap();
 
-    // Different phase counts
-    let kpmg_phases = kpmg.blueprint.phases.len();
-    let pwc_phases = pwc.blueprint.phases.len();
-    let deloitte_phases = deloitte.blueprint.phases.len();
+    // All ISA-complete blueprints have 7 phases but the 7th phase differs per firm
+    let kpmg_last_phase = kpmg.blueprint.phases.last().map(|p| p.id.as_str()).unwrap_or("");
+    let pwc_last_phase = pwc.blueprint.phases.last().map(|p| p.id.as_str()).unwrap_or("");
+    let deloitte_last_phase = deloitte
+        .blueprint
+        .phases
+        .last()
+        .map(|p| p.id.as_str())
+        .unwrap_or("");
 
-    // At least one pair should differ in phase count
-    assert!(
-        kpmg_phases != pwc_phases || pwc_phases != deloitte_phases,
-        "at least two blueprints should have different phase counts: KPMG={}, PwC={}, Deloitte={}",
-        kpmg_phases,
-        pwc_phases,
-        deloitte_phases
+    // Each firm's 7th phase has a distinct firm-specific identifier
+    assert_ne!(
+        kpmg_last_phase, pwc_last_phase,
+        "KPMG and PwC should have distinct 7th-phase IDs (got '{}' vs '{}')",
+        kpmg_last_phase, pwc_last_phase
+    );
+    assert_ne!(
+        pwc_last_phase, deloitte_last_phase,
+        "PwC and Deloitte should have distinct 7th-phase IDs (got '{}' vs '{}')",
+        pwc_last_phase, deloitte_last_phase
     );
 
     // Different methodology names

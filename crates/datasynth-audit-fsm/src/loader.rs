@@ -20,14 +20,14 @@ const BUILTIN_FSA: &str = include_str!("../blueprints/generic_fsa.yaml");
 /// The built-in generic Internal Audit (IIA-GIAS) blueprint.
 const BUILTIN_IA: &str = include_str!("../blueprints/generic_ia.yaml");
 
-/// The built-in KPMG Clara-style ISA Financial Statement Audit blueprint.
-const BUILTIN_KPMG: &str = include_str!("../blueprints/kpmg_fsa.yaml");
+/// The built-in KPMG Clara-style ISA-complete Financial Statement Audit blueprint.
+const BUILTIN_KPMG: &str = include_str!("../blueprints/kpmg_isa_complete.yaml");
 
-/// The built-in PwC-style ISA Financial Statement Audit blueprint.
-const BUILTIN_PWC: &str = include_str!("../blueprints/pwc_fsa.yaml");
+/// The built-in PwC-style ISA-complete Financial Statement Audit blueprint.
+const BUILTIN_PWC: &str = include_str!("../blueprints/pwc_isa_complete.yaml");
 
-/// The built-in Deloitte-style ISA Financial Statement Audit blueprint.
-const BUILTIN_DELOITTE: &str = include_str!("../blueprints/deloitte_fsa.yaml");
+/// The built-in Deloitte-style ISA-complete Financial Statement Audit blueprint.
+const BUILTIN_DELOITTE: &str = include_str!("../blueprints/deloitte_isa_complete.yaml");
 
 // ---------------------------------------------------------------------------
 // Built-in overlay YAML
