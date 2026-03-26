@@ -70,20 +70,30 @@ in \Cref{sec:experiments}.
 \subsection{Future Work}
 \label{sec:future_work}
 
+Several of the research directions identified in earlier versions of
+this paper have been realized in v2.0.0: the audit FSM engine now
+includes 12 blueprints spanning ISA, IIA-GIAS, PCAOB, AICPA SOC~2,
+and Big~4 firm-style methodologies; the audit-optimizer crate performs
+shortest-path analysis and Monte Carlo simulation over blueprint
+graphs; and conformance metrics are computed across methodology
+variants.  The following directions remain open:
+
 \begin{enumerate}
-  \item \textbf{Federated fingerprinting.}  Aggregating fingerprints
-    from multiple organizations under secure multi-party computation
-    to enable industry-level reference knowledge graphs.
+  \item \textbf{Temporal graph network export.}  Integrating temporal
+    graph network (TGN) export and the temporal accounting network
+    formalism of~\citet{ivertowski2024temporal} for time-evolving
+    reference knowledge graphs with continuous-time event encoding.
 
-  \item \textbf{Hybrid generative models.}  Combining \system{}'s
-    constraint-enforcing architecture with learned generators (e.g.,
-    conditional diffusion models) trained on fingerprint-synthesized
-    data.
+  \item \textbf{Causal inference from synthetic ground truth.}  Using
+    \system{}'s fully provenanced datasets---where the causal DAG is
+    known by construction---as benchmarks for evaluating causal
+    discovery algorithms in the enterprise domain.
 
-  \item \textbf{Temporal graph networks.}  Integrating temporal graph
-    network (TGN) export and the temporal accounting network formalism
-    of~\citet{ivertowski2024temporal} for time-evolving reference
-    knowledge graphs.
+  \item \textbf{Federated simulation.}  Extending the federated
+    fingerprint aggregation framework to support distributed
+    multi-organization simulation under secure multi-party computation,
+    enabling industry-level reference knowledge graphs without
+    centralizing enterprise data.
 
   \item \textbf{Hardware-accelerated graph construction.}  Coupling
     \system{}'s output with GPU-accelerated accounting network
@@ -104,13 +114,11 @@ in \Cref{sec:experiments}.
     fitted from real-world data for more faithful counterfactual
     propagation.
 
-  \item \textbf{Methodology-driven audit simulation.}  The YAML-based
-    audit FSM engine opens several research directions:
-    (a)~optimization of audit procedures via graph-theoretic analysis of
-    methodology state machines, (b)~Monte Carlo estimation of engagement
-    outcome distributions under varying overlay parameters, and
-    (c)~extension to additional audit frameworks (e.g., EY~GAM,
-    KPMG~AAER) through custom blueprint definitions.
+  \item \textbf{Judgment automation boundary analysis.}  Leveraging
+    the \texttt{judgment\_level} annotations across 12 methodology
+    blueprints to empirically characterize the automation frontier in
+    audit procedures---identifying which steps are amenable to AI
+    assistance and where human judgment remains indispensable.
 \end{enumerate}
 
 % ─────────────────────────────────────────────────────────────────────

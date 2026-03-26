@@ -46,9 +46,11 @@ The \texttt{GenerationOrchestrator} executes the following stages:
     engagement context from the generated financial data, and runs the
     finite state machine engine.  The engine walks procedures in
     precondition DAG order, executing each procedure's state machine and
-    dispatching step commands to the appropriate generators.  The
-    resulting event trail and artifact bag are integrated into the
-    standard output pipeline.
+    dispatching step commands to the appropriate generators.  Streaming
+    execution is supported: a callback-based API emits each audit event
+    as it is produced, enabling real-time downstream consumption without
+    buffering the full engagement result.  The resulting event trail and
+    artifact bag are integrated into the standard output pipeline.
 
   \item \textbf{Anomaly injection.}  Apply configured anomalies with
     ground-truth labels across all five knowledge dimensions.

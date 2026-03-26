@@ -242,6 +242,7 @@ Journal line items        & 680{,}000+ \\
 Master data (combined)    & 58{,}000 \\
 Document-flow records     & 85{,}000 \\
 Subledger records         & 95{,}000 \\
+Audit FSM events          & 12{,}000+ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -251,6 +252,49 @@ Manufacturing (Medium) configuration generates a full 24-month dataset
 (385K journal entries, 1.1M line items, 500K+ document-flow records)
 in under 30 seconds.  Peak resident memory stays below 500\,MB even
 for the Financial Services (Large) configuration.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Audit Methodology Coverage}
+\label{sec:exp_audit}
+
+\Cref{tab:blueprint_summary} summarizes the 12 audit methodology
+blueprints shipped with \system{} v2.0.0.  Each blueprint encodes a
+complete audit methodology as a finite state machine with procedures,
+phases, and steps annotated by governing standards and judgment level.
+
+\begin{table}[t]
+\centering
+\caption{Audit methodology blueprint summary.  Judgment level
+  distribution indicates the fraction of steps classified as
+  \texttt{data\_only} / \texttt{ai\_assistable} / \texttt{human\_required}.}
+\label{tab:blueprint_summary}
+\small
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Blueprint} & \textbf{Framework} & \textbf{Procedures}
+  & \textbf{Steps} & \textbf{Standards} \\
+\midrule
+Generic FSA       & ISA         &  9 &  24 & 14 \\
+Generic IA        & IIA-GIAS    & 34 &  82 & 52 \\
+Deloitte FSA      & ISA         & 10 &  28 & 16 \\
+PwC FSA           & ISA         & 10 &  28 & 16 \\
+KPMG FSA          & ISA         & 10 &  28 & 16 \\
+Deloitte ISA      & ISA (full)  & 48 & 180 & 34 \\
+PwC ISA           & ISA (full)  & 48 & 180 & 34 \\
+KPMG ISA          & ISA (full)  & 48 & 180 & 34 \\
+EY GAM Lite       & ISA         & 12 &  36 & 18 \\
+PCAOB Integrated  & PCAOB       & 42 & 156 & 28 \\
+SOC 2 Type II     & AICPA TSC   & 20 &  60 & 15 \\
+Regulatory Exam   & Regulatory  & 16 &  48 & 12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The blueprints enable cross-firm comparison: for example, the three
+ISA-complete firm-style blueprints share the same procedure count but
+differ in step granularity, evidence requirements, and the distribution
+of judgment levels---providing a basis for studying methodology
+variation in a controlled setting.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Privacy-Utility Evaluation}
