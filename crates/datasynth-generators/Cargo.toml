@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
-description = "Data generators for journal entries, chart of accounts, and ACDOCA event logs"
+description = "50+ data generators covering GL, P2P, O2C, S2C, HR, manufacturing, audit, tax, treasury, and ESG"
 keywords.workspace = true
 categories.workspace = true
 

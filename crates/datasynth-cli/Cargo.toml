@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
-description = "Command-line interface for synthetic accounting data generation"
+description = "Command-line interface for synthetic enterprise data generation"
 keywords.workspace = true
 categories.workspace = true
 

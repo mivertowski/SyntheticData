@@ -7,7 +7,7 @@ rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
 description = "Accounting and audit standards framework for synthetic data generation (IFRS, US GAAP, ISA, SOX, PCAOB)"
-keywords.workspace = true
+keywords = ["accounting-standards", "ifrs", "us-gaap", "isa", "synthetic-data"]
 categories.workspace = true
 
 [dependencies]

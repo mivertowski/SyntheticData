@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
-description = "Core domain models, traits, and distributions for synthetic accounting data generation"
+description = "Core domain models, traits, and distributions for synthetic enterprise data generation"
 keywords.workspace = true
 categories.workspace = true
 

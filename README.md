@@ -1,14 +1,14 @@
-# DataSynth
+# DataSynth v2.0.0
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 [![CI](https://github.com/mivertowski/SyntheticData/actions/workflows/ci.yml/badge.svg)](https://github.com/mivertowski/SyntheticData/actions/workflows/ci.yml)
 
-**High-performance synthetic enterprise data generation for ML, audit analytics, and system testing.**
+Synthetic enterprise data generation for ML training, audit analytics, and system testing.
 
-DataSynth generates statistically realistic, fully interconnected enterprise financial data at scale. It produces coherent General Ledger journal entries, document flows, subledger records, banking transactions, process mining event logs, and graph exports — covering 20+ enterprise process families from Procure-to-Pay through ESG reporting.
+DataSynth generates statistically realistic, fully interconnected enterprise financial data. It produces coherent General Ledger journal entries, document flows, subledger records, banking transactions, process mining event logs, and graph exports across 20+ enterprise process families.
 
-All generated data respects accounting identities (debits = credits, Assets = Liabilities + Equity), follows empirical distributions (Benford's Law, log-normal mixtures), and maintains referential integrity across 100+ output tables.
+Generated data respects accounting identities (debits = credits, Assets = Liabilities + Equity), follows empirical distributions (Benford's Law, log-normal mixtures), and maintains referential integrity across 100+ output tables.
 
 ---
 
@@ -39,7 +39,7 @@ git clone https://github.com/mivertowski/SyntheticData.git
 cd SyntheticData
 cargo build --release
 
-# Demo mode — generates a complete dataset with defaults
+# Demo mode -- generates a complete dataset with defaults
 ./target/release/datasynth-data generate --demo --output ./demo-output
 
 # Full audit simulation (113+ output files)
@@ -55,22 +55,21 @@ cargo build --release
 
 ## Group Audit Simulation
 
-DataSynth v1.3.0 can simulate a complete enterprise group audit following ISA, IFRS, US GAAP, and local regulations. Use the `audit-group` preset to generate all audit-relevant data:
+The `audit-group` preset generates a complete enterprise group audit dataset following ISA, IFRS, US GAAP, and local regulations:
 
 ```bash
-# Generate a complete audit simulation dataset
 ./target/release/datasynth-data generate --demo --preset audit-group --output ./audit-output
 
 # Export in SAP, French (FEC), or German (GoBD) audit formats
 ./target/release/datasynth-data generate --config config.yaml --output ./output --export-format sap --export-format fec
 ```
 
-This produces 113+ interconnected files covering:
+This produces 113+ interconnected files:
 
 | Category | Content |
 |----------|---------|
 | **Financial Statements** | Standalone + consolidated BS/IS/CF with elimination schedules |
-| **Audit Lifecycle** | Engagement → risk assessment → procedures → sampling → findings → opinion |
+| **Audit Lifecycle** | Engagement, risk assessment, procedures, sampling, findings, opinion |
 | **ISA 600 Group Audit** | Component auditors, materiality allocation, scope, instructions, reports |
 | **Risk Assessment** | Combined Risk Assessment (CRA) per account area and assertion |
 | **Audit Methodology** | Materiality (ISA 320), sampling (ISA 530), analytical procedures (ISA 520) |
@@ -78,7 +77,7 @@ This produces 113+ interconnected files covering:
 | **SOX Compliance** | Section 302 certifications, Section 404 ICFR assessments |
 | **Graph Export** | 78+ entity types, 39+ edge types for ML training and AI agent interaction |
 
-All data is internally coherent: CRA drives sampling → sampling correlates with misstatement rates → misstatements drive findings → findings drive the audit opinion.
+CRA drives sampling, sampling correlates with misstatement rates, misstatements drive findings, findings drive the audit opinion.
 
 ---
 
@@ -86,18 +85,16 @@ All data is internally coherent: CRA drives sampling → sampling correlates wit
 
 ### Statistical Foundations
 
-DataSynth models real-world financial data characteristics from the ground up:
-
-- **Distribution engine** — Log-normal mixtures, Gaussian mixtures, Pareto, Weibull, Beta, and zero-inflated distributions with configurable components
-- **Copula correlations** — Cross-field dependency modeling via Gaussian, Clayton, Gumbel, Frank, and Student-t copulas
-- **Benford's Law** — First and second-digit compliance with configurable deviation for anomaly injection
-- **Temporal patterns** — Month-end/quarter-end/year-end volume spikes, intraday segments, business day calendars (15 regions), processing lags, and fiscal calendar support
-- **Regime changes** — Economic cycles, acquisition effects, and structural breaks in time series
-- **Industry profiles** — Pre-configured distributions for Retail, Manufacturing, Financial Services, Healthcare, and Technology
+- **Distribution engine** -- Log-normal mixtures, Gaussian mixtures, Pareto, Weibull, Beta, and zero-inflated distributions with configurable components
+- **Copula correlations** -- Cross-field dependency modeling via Gaussian, Clayton, Gumbel, Frank, and Student-t copulas
+- **Benford's Law** -- First and second-digit compliance with configurable deviation for anomaly injection
+- **Temporal patterns** -- Month-end/quarter-end/year-end volume spikes, intraday segments, business day calendars (15 regions), processing lags, and fiscal calendar support
+- **Regime changes** -- Economic cycles, acquisition effects, and structural breaks in time series
+- **Industry profiles** -- Pre-configured distributions for Retail, Manufacturing, Financial Services, Healthcare, and Technology
 
 ### Enterprise Process Simulation
 
-Every process chain generates its own master data, documents, and journal entries — all cross-referenced:
+Every process chain generates its own master data, documents, and journal entries -- all cross-referenced:
 
 | Process Family | Scope |
 |----------------|-------|
@@ -113,60 +110,64 @@ Every process chain generates its own master data, documents, and journal entrie
 | **Project Accounting** | WBS hierarchies, cost lines, percentage-of-completion revenue, earned value (SPI/CPI/EAC), change orders |
 | **ESG / Sustainability** | GHG Scope 1/2/3 emissions, energy/water/waste, workforce diversity, safety metrics, GRI/SASB/TCFD disclosures |
 | **Intercompany** | IC matching, transfer pricing, consolidation eliminations, currency translation |
-| **Subledgers** | AR, AP, Fixed Assets, Inventory — each with GL reconciliation |
+| **Subledgers** | AR, AP, Fixed Assets, Inventory -- each with GL reconciliation |
 | **Period Close** | Monthly close engine, depreciation runs, accruals, year-end closing entries |
 | **Banking / KYC / AML** | Customer personas, KYC profiles, AML typologies (structuring, layering, mule, funnel) |
 | **Sales** | Quote-to-order pipeline with win rate modeling and pricing negotiation |
 | **Bank Reconciliation** | Statement matching, outstanding checks, deposits in transit |
-| **Audit** | Complete ISA lifecycle: engagements, workpapers, evidence, risk assessments, findings, opinions (ISA 700), KAMs (ISA 701), SOX 302/404 |
+| **Audit** | ISA lifecycle: engagements, workpapers, evidence, risk assessments, findings, opinions (ISA 700), KAMs (ISA 701), SOX 302/404 |
 | **Group Audit (ISA 600)** | Component auditors, materiality allocation, scope assignment, component instructions/reports, consolidation |
 
 ### Accounting, Audit & Compliance Standards
 
-- **Accounting frameworks** — US GAAP, IFRS, French GAAP (PCG), German GAAP (HGB/SKR04), and dual reporting
-- **Revenue recognition** — ASC 606 / IFRS 15 with contract generation, performance obligations, and SSP allocation
-- **Leases** — ASC 842 / IFRS 16 with ROU assets, lease liabilities, and classification
-- **Fair value** — ASC 820 / IFRS 13 Level 1/2/3 hierarchy
-- **Impairment** — ASC 360 / IAS 36 testing with fair value estimation
-- **Audit standards** — ISA (34 standards), PCAOB (19+ standards) with procedure mapping
-- **SOX compliance** — Section 302/404 assessments with deficiency classification and material weakness detection
-- **COSO 2013** — 5 components, 17 principles, maturity levels, entity-level and transaction-level controls
-- **Compliance regulations** — 45+ built-in standards registry, jurisdiction profiles (10 countries), regulatory filings, audit procedures, and compliance findings with full deficiency classification
-- **Cross-domain compliance graph** — Standards linked to GL account types and business processes; full traversal paths (Company → Jurisdiction → Standard → Account → JournalEntry)
-- **Localized exports** — FEC (French) and GoBD (German) audit file formats
-- **Enterprise Group Audit (ISA 600)** — Component auditor assignment, group materiality allocation, scope assignment (full/specific/analytical), component instructions and reports
-- **Audit Opinion (ISA 700/705/706/701)** — Opinion derived from findings severity and going concern, Key Audit Matters, PCAOB ICFR opinion
-- **Audit Methodology** — Combined Risk Assessment (ISA 315), materiality calculations (ISA 320), sampling methodology (ISA 530), SCOTS classification, unusual item detection, analytical relationships (ISA 520)
-- **Deferred Tax (IAS 12 / ASC 740)** — Temporary differences, ETR reconciliation, rollforward schedules, valuation allowances
-- **Business Combinations (IFRS 3 / ASC 805)** — Purchase price allocation, fair value step-ups, goodwill, contingent consideration
-- **Segment Reporting (IFRS 8 / ASC 280)** — Operating segments with reconciliation to consolidated totals
-- **Expected Credit Loss (IFRS 9 / ASC 326)** — Provision matrix by aging bucket, forward-looking scenarios, ECL movements
-- **Pensions (IAS 19 / ASC 715)** — DBO rollforward, plan assets, pension expense, OCI remeasurements
-- **Provisions (IAS 37 / ASC 450)** — Framework-aware recognition thresholds, provision movements
-- **Stock Compensation (ASC 718 / IFRS 2)** — Grants, vesting schedules, expense recognition
-- **Functional Currency (IAS 21)** — Per-entity functional currency, CTA as OCI
-- **Consolidated Financial Statements** — Standalone + consolidated with elimination schedules
-- **Going Concern (ISA 570)** — Financial indicator derivation, management mitigation plans
-- **Subsequent Events (ISA 560 / IAS 10)** — Adjusting and non-adjusting events
+- **Accounting frameworks** -- US GAAP, IFRS, French GAAP (PCG), German GAAP (HGB/SKR04), and dual reporting
+- **Revenue recognition** -- ASC 606 / IFRS 15 with contract generation, performance obligations, and SSP allocation
+- **Leases** -- ASC 842 / IFRS 16 with ROU assets, lease liabilities, and classification
+- **Fair value** -- ASC 820 / IFRS 13 Level 1/2/3 hierarchy
+- **Impairment** -- ASC 360 / IAS 36 testing with fair value estimation
+- **Audit standards** -- ISA (34 standards), PCAOB (19+ standards) with procedure mapping
+- **SOX compliance** -- Section 302/404 assessments with deficiency classification and material weakness detection
+- **COSO 2013** -- 5 components, 17 principles, maturity levels, entity-level and transaction-level controls
+- **Compliance regulations** -- 45+ built-in standards registry, jurisdiction profiles (10 countries), regulatory filings, audit procedures, and compliance findings with full deficiency classification
+- **Cross-domain compliance graph** -- Standards linked to GL account types and business processes; full traversal paths (Company -> Jurisdiction -> Standard -> Account -> JournalEntry)
+- **Localized exports** -- FEC (French) and GoBD (German) audit file formats
+- **Enterprise Group Audit (ISA 600)** -- Component auditor assignment, group materiality allocation, scope assignment (full/specific/analytical), component instructions and reports
+- **Audit Opinion (ISA 700/705/706/701)** -- Opinion derived from findings severity and going concern, Key Audit Matters, PCAOB ICFR opinion
+- **Audit Methodology** -- Combined Risk Assessment (ISA 315), materiality calculations (ISA 320), sampling methodology (ISA 530), SCOTS classification, unusual item detection, analytical relationships (ISA 520)
+- **Deferred Tax (IAS 12 / ASC 740)** -- Temporary differences, ETR reconciliation, rollforward schedules, valuation allowances
+- **Business Combinations (IFRS 3 / ASC 805)** -- Purchase price allocation, fair value step-ups, goodwill, contingent consideration
+- **Segment Reporting (IFRS 8 / ASC 280)** -- Operating segments with reconciliation to consolidated totals
+- **Expected Credit Loss (IFRS 9 / ASC 326)** -- Provision matrix by aging bucket, forward-looking scenarios, ECL movements
+- **Pensions (IAS 19 / ASC 715)** -- DBO rollforward, plan assets, pension expense, OCI remeasurements
+- **Provisions (IAS 37 / ASC 450)** -- Framework-aware recognition thresholds, provision movements
+- **Stock Compensation (ASC 718 / IFRS 2)** -- Grants, vesting schedules, expense recognition
+- **Functional Currency (IAS 21)** -- Per-entity functional currency, CTA as OCI
+- **Consolidated Financial Statements** -- Standalone + consolidated with elimination schedules
+- **Going Concern (ISA 570)** -- Financial indicator derivation, management mitigation plans
+- **Subsequent Events (ISA 560 / IAS 10)** -- Adjusting and non-adjusting events
 
 ### YAML-Driven Audit FSM Engine
 
-The `datasynth-audit-fsm` crate provides a methodology-agnostic state machine engine that loads audit methodology blueprints from YAML files and generates realistic, event-sourced audit trails with concrete typed artifacts.
+The `datasynth-audit-fsm` crate provides a methodology-agnostic state machine engine that loads audit methodology blueprints from YAML and generates event-sourced audit trails with typed artifacts.
 
-The engine uses a two-layer architecture: **blueprints** define *what happens* (procedures, phases, state machines, evidence requirements, standards references), while **generation overlays** define *how it happens* (revision probabilities, timing distributions, artifact volumes, anomaly injection rates). This separation means the same blueprint can produce a thorough engagement or a rushed engagement by swapping a single overlay file.
+The engine uses a two-layer architecture: **blueprints** define *what happens* (procedures, phases, state machines, evidence requirements, standards references), while **generation overlays** define *how it happens* (revision probabilities, timing distributions, artifact volumes, anomaly injection rates). The same blueprint can produce a thorough engagement or a rushed engagement by swapping a single overlay file.
 
-Two built-in blueprints are included:
+10 builtin blueprints cover the major audit methodologies:
 
 | Blueprint | Procedures | Phases | Steps | Standards | Events | Artifacts |
 |-----------|-----------|--------|-------|-----------|--------|-----------|
 | Financial Statement Audit (FSA) | 9 | 3 | 24 | 14 ISA | 51 | 1,916 |
 | Internal Audit (IA) | 34 | 9 | 82 | 52 IIA-GIAS | 205 | 3,808 |
+| KPMG, PwC, Deloitte, EY GAM Lite | Firm-specific ISA methodologies | | | | | |
+| SOC 2 Type II | Trust Services Criteria | | | | | |
+| PCAOB Integrated | AS 2201 integrated audit | | | | | |
+| Regulatory Examination | Regulatory examination | | | | | |
 
 Additional methodology blueprints are available at [SyntheticDataBlueprints](https://github.com/mivertowski/SyntheticDataBlueprints).
 
-The **StepDispatcher** maps all 140 step commands to 14 concrete audit generators, enriched by the **analytics inventory** (87 data requirements + 71 analytical procedures from the AuditMethodology repo) and the **form ontology** (4,437 canonical field categories). Every step produces typed artifacts with data-driven content: findings cite specific journal entries, workpapers reference applicable ISA paragraphs, and evidence descriptions include expected form fields.
+The **StepDispatcher** maps all step commands to 14 concrete audit generators, enriched by the **analytics inventory** (87 data requirements + 71 analytical procedures across FSA, IA, SOC 2, PCAOB, and Regulatory blueprints) and the **form ontology** (4,437 canonical field categories). Every step carries a `judgment_level` for risk-based procedure selection. Every artifact is data-driven: findings cite specific journal entries, workpapers reference applicable ISA paragraphs, and evidence descriptions include expected form fields.
 
-**100% audit data coverage** — all 14 data types and 14 analytical procedures required by FSA audit steps are fully generated:
+**14/14 audit data types and 14/14 analytical procedures** -- full coverage of all data types required by FSA audit steps:
 
 | Category | Data Types |
 |----------|-----------|
@@ -177,18 +178,17 @@ The **StepDispatcher** maps all 140 step commands to 14 concrete audit generator
 | Governance | Board minutes (quarterly + audit committee), management reports (KPI/RAG/budget) |
 | IT controls | Access logs (business-hour weighting), change management records (approval gap correlation) |
 
-**Key features:**
+**Engine features:**
 - 8-state C2CE (Condition-Criteria-Cause-Effect) lifecycle for finding development
 - Self-loop handling with configurable max iterations for follow-up procedures
 - Continuous phase support for parallel execution (ethics, governance, quality)
 - Discriminator-based procedure filtering (categories, risk ratings, engagement types)
 - Generation overlay presets: `default`, `thorough`, `rushed` with cost model (base hours + role rates)
-- Export formats: flat JSON, CSV (Disco/Celonis), XES 2.0 (ProM/pm4py), OCEL 2.0
+- 6 export formats: JSON, CSV (Disco/Celonis), XES 2.0 (ProM/pm4py), OCEL 2.0, Celonis, Parquet
+- Streaming execution with live anomaly injection
 - Benchmark datasets: simple/medium/complex with configurable anomaly injection
-- Conformance metrics: fitness, precision, per-procedure analysis
-- Overlay parameter fitting from target engagement profiles
-- Blueprint discovery from event logs (alpha miner variant)
-- Pluggable LLM content generation (`--features claude-content` for Claude CLI adapter)
+- ContentGenerator trait with pluggable implementations (`--features claude-content` for Claude CLI adapter)
+- 284+ tests across audit FSM and optimizer modules
 - CLI: `datasynth-data audit validate|info|run|benchmark`
 
 ```yaml
@@ -197,7 +197,7 @@ audit:
   enabled: true
   fsm:
     enabled: true
-    blueprint: builtin:fsa     # builtin:fsa, builtin:ia, or path to custom YAML
+    blueprint: builtin:fsa     # builtin:fsa, builtin:ia, builtin:kpmg, builtin:pwc, etc.
     overlay: builtin:default   # builtin:default, builtin:thorough, builtin:rushed
 ```
 
@@ -213,69 +213,73 @@ use rand_chacha::ChaCha8Rng;
 let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
 let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default)).unwrap();
 let mut engine = AuditFsmEngine::new(bwp, overlay, ChaCha8Rng::seed_from_u64(42));
-let result = engine.run_engagement(&EngagementContext::test_default()).unwrap();
+let result = engine.run_engagement(&EngagementContext::demo()).unwrap();
 
 println!("Events: {}, Artifacts: {}", result.event_log.len(), result.artifacts.total_artifacts());
 ```
 
-The companion `datasynth-audit-optimizer` crate provides:
-- **Graph analysis**: blueprint → petgraph conversion, shortest path (FSA: 27, IA: 101 min transitions)
-- **Resource-constrained optimization**: budget/role-aware audit plan selection with coverage reporting
-- **Risk-based scoping**: standards/risk coverage analysis, what-if procedure removal impact
-- **Portfolio simulation**: multi-engagement with shared resources, scheduling conflicts, systemic findings
-- **Conformance metrics**: fitness, precision, anomaly detection statistics
-- **Overlay fitting**: iterative parameter search from target engagement profiles
-- **Blueprint discovery**: infer methodology from event logs (alpha miner), compare against reference
-- **Anomaly calibration**: auto-tune injection rates to target detection difficulty
+The companion `datasynth-audit-optimizer` crate (16 modules) provides:
+- **Graph analysis**: Blueprint to petgraph conversion, shortest path (FSA: 27, IA: 101 min transitions)
+- **Resource-constrained optimization**: Budget/role-aware audit plan selection with coverage reporting
+- **Risk-based scoping**: Standards/risk coverage analysis, what-if procedure removal impact
+- **Portfolio simulation**: Multi-engagement with shared resources, scheduling conflicts, systemic findings
+- **Conformance metrics**: Fitness, precision, anomaly detection statistics
+- **Overlay fitting**: Iterative parameter search from target engagement profiles
+- **Blueprint discovery**: Infer methodology from event logs (alpha miner), compare against reference
+- **Anomaly calibration**: Auto-tune injection rates to target detection difficulty
+- **Cross-firm benchmark comparison**: Methodology coverage and efficiency across Big 4 firms
+- **ISA 600 group audit simulation**: Component auditor assignment, materiality allocation, scope
+- **Year-over-year engagement chains**: Multi-period simulation with carry-forward findings
+- **Blueprint testing**: Automated blueprint validation and regression testing
 
 For a deep dive, see the [Audit FSM Engine documentation](https://mivertowski.github.io/SyntheticData/advanced/audit-fsm-engine.html).
 
 ### Interconnectivity & Relationships
 
-- **Multi-tier vendor networks** — Tier 1/2/3 supply chain with behavioral clusters (Strategic, Operational, Transactional, Problematic)
-- **Customer segmentation** — Enterprise/MidMarket/SMB/Consumer with Pareto-like revenue distribution and lifecycle stages
-- **Relationship strength** — Composite scoring from volume, count, duration, recency, and mutual connections
-- **Cross-process links** — P2P and O2C linked via inventory; payments linked to bank reconciliation
-- **Entity graphs** — 16 entity types, 26 relationship types with connectivity and clustering metrics
-- **Compliance-to-accounting links** — Standards mapped to GL account types and processes; findings linked to controls and affected accounts; filings linked to companies and jurisdictions
+- **Multi-tier vendor networks** -- Tier 1/2/3 supply chain with behavioral clusters (Strategic, Operational, Transactional, Problematic)
+- **Customer segmentation** -- Enterprise/MidMarket/SMB/Consumer with Pareto-like revenue distribution and lifecycle stages
+- **Relationship strength** -- Composite scoring from volume, count, duration, recency, and mutual connections
+- **Cross-process links** -- P2P and O2C linked via inventory; payments linked to bank reconciliation
+- **Entity graphs** -- 16 entity types, 26 relationship types with connectivity and clustering metrics
+- **Compliance-to-accounting links** -- Standards mapped to GL account types and processes; findings linked to controls and affected accounts; filings linked to companies and jurisdictions
 
 ### Fraud, Anomalies & Data Quality
 
-- **ACFE-aligned fraud taxonomy** — Asset misappropriation, corruption, and financial statement fraud with calibrated rates
-- **60+ anomaly types** — Fraud, errors, process issues, statistical outliers, and relational anomalies
-- **Collusion modeling** — 9 ring types with role-based conspirators, defection, and escalation dynamics
-- **Management override** — Senior-level fraud patterns with fraud triangle modeling
-- **Red flag generation** — 40+ probabilistic fraud indicators with Bayesian calibration
-- **Industry-specific patterns** — Manufacturing yield manipulation, retail sweethearting, healthcare upcoding
-- **Data quality variations** — Missing values (MCAR/MAR/MNAR), format variations, typos (keyboard-aware, OCR), duplicates, encoding issues
-- **Full labeling** — Every injected anomaly and quality issue is labeled for supervised ML training
+- **ACFE-aligned fraud taxonomy** -- Asset misappropriation, corruption, and financial statement fraud with calibrated rates
+- **60+ anomaly types** -- Fraud, errors, process issues, statistical outliers, and relational anomalies
+- **Collusion modeling** -- 9 ring types with role-based conspirators, defection, and escalation dynamics
+- **Management override** -- Senior-level fraud patterns with fraud triangle modeling
+- **Red flag generation** -- 40+ probabilistic fraud indicators with Bayesian calibration
+- **Industry-specific patterns** -- Manufacturing yield manipulation, retail sweethearting, healthcare upcoding
+- **Data quality variations** -- Missing values (MCAR/MAR/MNAR), format variations, typos (keyboard-aware, OCR), duplicates, encoding issues
+- **Full labeling** -- Every injected anomaly and quality issue is labeled for supervised ML training
 
 ### Process & Behavioral Drift
 
-- **Organizational events** — Acquisitions, divestitures, mergers, reorganizations with volume multipliers
-- **Process evolution** — S-curve automation rollout, workflow changes, policy updates
-- **Technology transitions** — ERP migrations with phased rollout (parallel run, cutover, stabilization)
-- **Market drift** — Economic cycles, commodity price shocks, recession modeling
-- **Labeled drift events** — Ground truth labels with magnitude and detection difficulty for ML training
+- **Organizational events** -- Acquisitions, divestitures, mergers, reorganizations with volume multipliers
+- **Process evolution** -- S-curve automation rollout, workflow changes, policy updates
+- **Technology transitions** -- ERP migrations with phased rollout (parallel run, cutover, stabilization)
+- **Market drift** -- Economic cycles, commodity price shocks, recession modeling
+- **Labeled drift events** -- Ground truth labels with magnitude and detection difficulty for ML training
 
 ### Machine Learning & Graph Export
 
-- **Graph formats** — PyTorch Geometric (.pt), Neo4j (CSV + Cypher), DGL, RustGraph JSON
-- **Multi-layer hypergraph** — 3-layer (Governance, Process Events, Accounting Network) with OCPM events as hyperedges and compliance regulation nodes
-- **Compliance graph layer** — Standards, findings, filings, and jurisdictions as graph nodes with cross-domain edges to accounts, controls, and companies
-- **28 audit entity types in graph** — CRA, materiality, opinions, sampling plans, SCOTS, unusual items, analytical relationships, group structure, and more
-- **27 cross-entity edge types** — CRA→entity, opinion→engagement, KAM→opinion, sampling→CRA, unusual→JE, and audit lifecycle traversal paths
-- **Train/val/test splits** — Configurable data partitioning for ML pipelines
-- **Anomaly labels** — Fraud labels, quality issue labels, and drift labels in standardized format
-- **Counterfactual pairs** — (original, mutated) journal entry pairs for causal ML training
+- **Graph formats** -- PyTorch Geometric (.pt), Neo4j (CSV + Cypher), DGL, RustGraph JSON
+- **Multi-layer hypergraph** -- 3-layer (Governance, Process Events, Accounting Network) with OCPM events as hyperedges and compliance regulation nodes
+- **Compliance graph layer** -- Standards, findings, filings, and jurisdictions as graph nodes with cross-domain edges to accounts, controls, and companies
+- **28 audit entity types in graph** -- CRA, materiality, opinions, sampling plans, SCOTS, unusual items, analytical relationships, group structure, and more
+- **27 cross-entity edge types** -- CRA to entity, opinion to engagement, KAM to opinion, sampling to CRA, unusual to JE, and audit lifecycle traversal paths
+- **Train/val/test splits** -- Configurable data partitioning for ML pipelines
+- **Anomaly labels** -- Fraud labels, quality issue labels, and drift labels in standardized format
+- **Counterfactual pairs** -- (original, mutated) journal entry pairs for causal ML training
 
 ### Process Mining
 
-- **OCEL 2.0** — Object-centric event logs in JSON/XML format
-- **XES 2.0** — XML export compatible with ProM, Celonis, Disco, and pm4py
+- **OCEL 2.0** -- Object-centric event logs in JSON/XML format
+- **XES 2.0** -- XML export compatible with ProM, Celonis, Disco, and pm4py
 - **101+ activity types** across 12 process families with 65+ object types
-- **10 OCPM generators** — S2C, H2R, MFG, BANK, AUDIT, Bank Recon, Tax, Treasury, Project Accounting, ESG
-- **Process variants** — Happy path (75%), exception path (20%), error path (5%)
+- **10 OCPM generators** -- S2C, H2R, MFG, BANK, AUDIT, Bank Recon, Tax, Treasury, Project Accounting, ESG
+- **Process variants** -- Happy path (75%), exception path (20%), error path (5%)
 
 ### Advanced Generation
 
@@ -291,20 +295,20 @@ For a deep dive, see the [Audit FSM Engine documentation](https://mivertowski.gi
 ### Production Features
 
 - **REST / gRPC / WebSocket APIs** with streaming generation and backpressure handling
-- **Authentication** — API key (Argon2id), JWT/OIDC (RS256), role-based access control (Admin/Operator/Viewer)
-- **Quality gates** — Configurable pass/fail thresholds (strict/default/lenient) with 8 metrics
-- **Plugin SDK** — `GeneratorPlugin`, `SinkPlugin`, `TransformPlugin` traits with thread-safe registry
-- **Resource guards** — Memory, disk, and CPU monitoring with graceful degradation (Normal → Reduced → Minimal → Emergency)
-- **Deterministic generation** — Seeded ChaCha8 RNG for fully reproducible output
-- **Streaming output** — Async generation with configurable backpressure (block/drop_oldest/drop_newest/buffer)
-- **Data lineage** — Per-file checksums, lineage graph, W3C PROV-JSON export
-- **Country packs** — Pluggable JSON country configuration (US/DE/GB built-in) with holidays, names, tax, addresses
-- **Observability** — OpenTelemetry traces, Prometheus metrics, structured JSON logging
-- **Docker & Kubernetes** — Multi-stage distroless containers, Helm chart with HPA/PDB, Prometheus ServiceMonitor
-- **CI/CD** — 7-job GitHub Actions pipeline (fmt, clippy, cross-platform test, MSRV, security, coverage, benchmarks)
-- **EU AI Act** — Article 50 synthetic content marking and Article 10 data governance reports
-- **Fuzzing** — cargo-fuzz targets for config parsing, fingerprint loading, and validation
-- **Panic-free** — `#![deny(clippy::unwrap_used)]` enforced across all library crates
+- **Authentication** -- API key (Argon2id), JWT/OIDC (RS256), role-based access control (Admin/Operator/Viewer)
+- **Quality gates** -- Configurable pass/fail thresholds (strict/default/lenient) with 8 metrics
+- **Plugin SDK** -- `GeneratorPlugin`, `SinkPlugin`, `TransformPlugin` traits with thread-safe registry
+- **Resource guards** -- Memory, disk, and CPU monitoring with graceful degradation (Normal to Reduced to Minimal to Emergency)
+- **Deterministic generation** -- Seeded ChaCha8 RNG for fully reproducible output
+- **Streaming output** -- Async generation with configurable backpressure (block/drop_oldest/drop_newest/buffer)
+- **Data lineage** -- Per-file checksums, lineage graph, W3C PROV-JSON export
+- **Country packs** -- Pluggable JSON country configuration (US/DE/GB built-in) with holidays, names, tax, addresses
+- **Observability** -- OpenTelemetry traces, Prometheus metrics, structured JSON logging
+- **Docker & Kubernetes** -- Multi-stage distroless containers, Helm chart with HPA/PDB, Prometheus ServiceMonitor
+- **CI/CD** -- 7-job GitHub Actions pipeline (fmt, clippy, cross-platform test, MSRV, security, coverage, benchmarks)
+- **EU AI Act** -- Article 50 synthetic content marking and Article 10 data governance reports
+- **Fuzzing** -- cargo-fuzz targets for config parsing, fingerprint loading, and validation
+- **Panic-free** -- `#![deny(clippy::unwrap_used)]` enforced across all library crates
 
 ### Ecosystem Integrations
 
@@ -319,33 +323,33 @@ For a deep dive, see the [Audit FSM Engine documentation](https://mivertowski.gi
 
 ## Architecture
 
-DataSynth is a Rust workspace organized into 19 modular crates:
+DataSynth is a Rust workspace with 18 crates:
 
 ```
-datasynth-cli            CLI binary (generate, validate, init, info, fingerprint, scenario)
-datasynth-server         REST / gRPC / WebSocket server with auth and rate limiting
-datasynth-ui             Tauri + SvelteKit desktop application
-                │
-datasynth-runtime        Generation orchestrator (parallel execution, resource guards, streaming)
-                │
-datasynth-generators     50+ data generators across all process families
-datasynth-banking        KYC / AML banking transaction generator
-datasynth-ocpm           OCEL 2.0 / XES 2.0 process mining
-datasynth-fingerprint    Privacy-preserving fingerprint extraction and synthesis
-datasynth-standards      Accounting and audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
-datasynth-audit-fsm      YAML-driven audit FSM engine (ISA, IIA-GIAS blueprints)
-datasynth-audit-optimizer Audit path optimization and Monte Carlo simulation
-                │
-datasynth-graph          Graph export (PyTorch Geometric, Neo4j, DGL, RustGraph, Hypergraph)
-datasynth-graph-export   Unified graph export pipeline with 78 entity types
-datasynth-eval           Statistical evaluation, quality gates, auto-tuning
-                │
-datasynth-config         Configuration schema, validation, industry presets
-                │
-datasynth-core           Domain models, traits, distributions, resource guards
-                │
-datasynth-output         Output sinks (CSV, JSON, NDJSON, Parquet + Zstd) with streaming
-datasynth-test-utils     Test utilities, fixtures, mocks
+datasynth-cli              CLI binary (generate, validate, init, info, fingerprint, scenario)
+datasynth-server           REST / gRPC / WebSocket server with auth and rate limiting
+datasynth-ui               Tauri + SvelteKit desktop application
+                  |
+datasynth-runtime          Generation orchestrator (parallel execution, resource guards, streaming)
+                  |
+datasynth-generators       50+ data generators across all process families
+datasynth-banking          KYC / AML banking transaction generator
+datasynth-ocpm             OCEL 2.0 / XES 2.0 process mining
+datasynth-fingerprint      Privacy-preserving fingerprint extraction and synthesis
+datasynth-standards        Accounting and audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
+datasynth-audit-fsm        YAML-driven audit FSM engine (10 builtin blueprints)
+datasynth-audit-optimizer  Audit path optimization, Monte Carlo, group audit simulation
+                  |
+datasynth-graph            Graph export (PyTorch Geometric, Neo4j, DGL, RustGraph, Hypergraph)
+datasynth-graph-export     Unified graph export pipeline with 78+ entity types
+datasynth-eval             Statistical evaluation, quality gates, auto-tuning
+                  |
+datasynth-config           Configuration schema, validation, industry presets
+                  |
+datasynth-core             Domain models, traits, distributions, resource guards
+                  |
+datasynth-output           Output sinks (CSV, JSON, NDJSON, Parquet + Zstd) with streaming
+datasynth-test-utils       Test utilities, fixtures, mocks
 ```
 
 ---
@@ -467,143 +471,143 @@ DataSynth generates 100+ interconnected output tables organized by domain:
 
 ```
 output/
-├── journal_entries.csv             Flat CSV: one row per JE line item
-├── journal_entries.json            Nested JSON: full JE structure
-├── acdoca.csv                      SAP ACDOCA-style universal journal
-│
-├── master_data/
-│   ├── vendors.json
-│   ├── customers.json
-│   ├── materials.json
-│   ├── fixed_assets.json
-│   ├── employees.json              Includes salary, hire date, department
-│   └── cost_centers.json           Cost center hierarchy
-│
-├── document_flows/
-│   ├── purchase_orders.json
-│   ├── goods_receipts.json
-│   ├── vendor_invoices.json
-│   ├── payments.json
-│   ├── customer_receipts.json
-│   ├── sales_orders.json
-│   ├── deliveries.json
-│   ├── customer_invoices.json
-│   └── document_references.json    Cross-doc links (PO→GR→Invoice→Payment)
-│
-├── sourcing/                       S2C pipeline
-│   └── spend_analyses, sourcing_projects, rfx_events, supplier_bids,
-│       bid_evaluations, procurement_contracts, catalog_items, supplier_scorecards
-│
-├── subledger/
-│   ├── ap_invoices.json, ar_invoices.json
-│   ├── fa_records.json, inventory_positions.json, inventory_movements.json
-│   ├── ar_aging.json, ap_aging.json
-│   ├── depreciation_runs.json, inventory_valuation.json
-│   └── dunning_runs.json, dunning_letters.json
-│
-├── hr/
-│   ├── payroll_runs.json, payroll_line_items.json
-│   ├── time_entries.json, expense_reports.json, benefit_enrollments.json
-│   ├── pension_plans.json, pension_obligations.json, plan_assets.json, pension_disclosures.json
-│   ├── stock_grants.json, stock_comp_expense.json
-│   └── employee_change_history.json
-│
-├── manufacturing/
-│   └── production_orders.json, quality_inspections.json, cycle_counts.json,
-│       bom_components.json, inventory_movements.json
-│
-├── financial_reporting/
-│   ├── financial_statements.json   All standalone statements combined
-│   ├── bank_reconciliations.json
-│   ├── notes_to_financial_statements.json
-│   ├── standalone/                 Per-entity: {entity_code}_financial_statements.json
-│   ├── consolidated/
-│   │   ├── consolidated_financial_statements.json
-│   │   └── consolidation_schedule.json
-│   └── segment_reporting/
-│       ├── segment_reports.json
-│       └── segment_reconciliations.json
-│
-├── period_close/
-│   └── trial_balances.json
-│
-├── balance/
-│   ├── opening_balances.json
-│   └── subledger_reconciliation.json
-│
-├── intercompany/
-│   ├── group_structure.json
-│   ├── ic_matched_pairs.json
-│   ├── ic_seller_journal_entries.json
-│   ├── ic_buyer_journal_entries.json
-│   ├── ic_elimination_entries.json
-│   └── nci_measurements.json
-│
-├── accounting_standards/
-│   ├── customer_contracts.json, impairment_tests.json
-│   ├── business_combinations.json, business_combination_journal_entries.json
-│   ├── ecl_models.json, ecl_provision_movements.json, ecl_journal_entries.json
-│   ├── provisions.json, provision_movements.json, contingent_liabilities.json
-│   └── fx/currency_translation_results.json
-│
-├── tax/
-│   ├── tax_jurisdictions.json, tax_codes.json, tax_provisions.json
-│   ├── tax_lines.json, tax_returns.json, withholding_records.json
-│   └── temporary_differences.json, etr_reconciliation.json,
-│       deferred_tax_rollforward.json, deferred_tax_journal_entries.json
-│
-├── treasury/
-│   └── cash_positions.json, cash_forecasts.json, cash_pools.json,
-│       debt_instruments.json, hedging_instruments.json, hedge_relationships.json,
-│       bank_guarantees.json, netting_runs.json
-│
-├── project_accounting/
-│   └── projects.json, cost_lines.json, revenue_records.json,
-│       earned_value_metrics.json, change_orders.json, milestones.json
-│
-├── esg/
-│   └── emission_records.json, energy_consumption.json, water_usage.json, ...
-│
-├── internal_controls/              CSV files for BI/analytics
-│   ├── internal_controls.csv
-│   ├── control_account_mappings.csv, control_process_mappings.csv
-│   ├── control_threshold_mappings.csv, control_doctype_mappings.csv
-│   ├── sod_conflict_pairs.csv, sod_rules.csv
-│   ├── coso_control_mapping.csv
-│   └── internal_controls.json, sod_violations.json
-│
-├── audit/                          33+ audit files
-│   ├── audit_engagements.json, audit_workpapers.json, audit_evidence.json
-│   ├── audit_risk_assessments.json, audit_findings.json, audit_judgments.json
-│   ├── audit_confirmations.json, audit_procedure_steps.json, audit_samples.json
-│   ├── engagement_letters.json (ISA 210)
-│   ├── combined_risk_assessments.json (ISA 315)
-│   ├── significant_transaction_classes.json (ISA 315 SCOTS)
-│   ├── materiality_calculations.json (ISA 320)
-│   ├── service_organizations.json, soc_reports.json, user_entity_controls.json (ISA 402)
-│   ├── unusual_items.json, analytical_relationships.json (ISA 520)
-│   ├── sampling_plans.json, sampled_items.json (ISA 530)
-│   ├── accounting_estimates.json (ISA 540)
-│   ├── subsequent_events.json (ISA 560)
-│   ├── going_concern_assessments.json (ISA 570)
-│   ├── component_auditors.json, group_audit_plan.json,
-│   │   component_instructions.json, component_reports.json (ISA 600)
-│   ├── audit_opinions.json, key_audit_matters.json (ISA 700/701)
-│   ├── sox_302_certifications.json, sox_404_assessments.json
-│   └── isa_mappings.json, isa_pcaob_mappings.json
-│
-├── banking/
-│   └── banking_customers.json, banking_accounts.json, banking_transactions.json,
-│       aml_transaction_labels.json, aml_customer_labels.json, aml_narratives.json
-│
-├── sales_kpi_budgets/
-│   └── sales_quotes.json, management_kpis.json, budgets.json
-│
-├── process_mining/                 OCEL 2.0 JSON, XES 2.0, process variants
-├── graphs/                         PyTorch Geometric, Neo4j CSV+Cypher, DGL, RustGraph
-├── labels/                         anomaly_labels, fraud_labels, quality_labels
-├── standards/                      Compliance standards, cross-references, filings
-└── events/                         process_evolution_events, organizational_events
++-- journal_entries.csv             Flat CSV: one row per JE line item
++-- journal_entries.json            Nested JSON: full JE structure
++-- acdoca.csv                      SAP ACDOCA-style universal journal
+|
++-- master_data/
+|   +-- vendors.json
+|   +-- customers.json
+|   +-- materials.json
+|   +-- fixed_assets.json
+|   +-- employees.json              Includes salary, hire date, department
+|   +-- cost_centers.json           Cost center hierarchy
+|
++-- document_flows/
+|   +-- purchase_orders.json
+|   +-- goods_receipts.json
+|   +-- vendor_invoices.json
+|   +-- payments.json
+|   +-- customer_receipts.json
+|   +-- sales_orders.json
+|   +-- deliveries.json
+|   +-- customer_invoices.json
+|   +-- document_references.json    Cross-doc links (PO->GR->Invoice->Payment)
+|
++-- sourcing/                       S2C pipeline
+|   +-- spend_analyses, sourcing_projects, rfx_events, supplier_bids,
+|       bid_evaluations, procurement_contracts, catalog_items, supplier_scorecards
+|
++-- subledger/
+|   +-- ap_invoices.json, ar_invoices.json
+|   +-- fa_records.json, inventory_positions.json, inventory_movements.json
+|   +-- ar_aging.json, ap_aging.json
+|   +-- depreciation_runs.json, inventory_valuation.json
+|   +-- dunning_runs.json, dunning_letters.json
+|
++-- hr/
+|   +-- payroll_runs.json, payroll_line_items.json
+|   +-- time_entries.json, expense_reports.json, benefit_enrollments.json
+|   +-- pension_plans.json, pension_obligations.json, plan_assets.json, pension_disclosures.json
+|   +-- stock_grants.json, stock_comp_expense.json
+|   +-- employee_change_history.json
+|
++-- manufacturing/
+|   +-- production_orders.json, quality_inspections.json, cycle_counts.json,
+|       bom_components.json, inventory_movements.json
+|
++-- financial_reporting/
+|   +-- financial_statements.json   All standalone statements combined
+|   +-- bank_reconciliations.json
+|   +-- notes_to_financial_statements.json
+|   +-- standalone/                 Per-entity: {entity_code}_financial_statements.json
+|   +-- consolidated/
+|   |   +-- consolidated_financial_statements.json
+|   |   +-- consolidation_schedule.json
+|   +-- segment_reporting/
+|       +-- segment_reports.json
+|       +-- segment_reconciliations.json
+|
++-- period_close/
+|   +-- trial_balances.json
+|
++-- balance/
+|   +-- opening_balances.json
+|   +-- subledger_reconciliation.json
+|
++-- intercompany/
+|   +-- group_structure.json
+|   +-- ic_matched_pairs.json
+|   +-- ic_seller_journal_entries.json
+|   +-- ic_buyer_journal_entries.json
+|   +-- ic_elimination_entries.json
+|   +-- nci_measurements.json
+|
++-- accounting_standards/
+|   +-- customer_contracts.json, impairment_tests.json
+|   +-- business_combinations.json, business_combination_journal_entries.json
+|   +-- ecl_models.json, ecl_provision_movements.json, ecl_journal_entries.json
+|   +-- provisions.json, provision_movements.json, contingent_liabilities.json
+|   +-- fx/currency_translation_results.json
+|
++-- tax/
+|   +-- tax_jurisdictions.json, tax_codes.json, tax_provisions.json
+|   +-- tax_lines.json, tax_returns.json, withholding_records.json
+|   +-- temporary_differences.json, etr_reconciliation.json,
+|       deferred_tax_rollforward.json, deferred_tax_journal_entries.json
+|
++-- treasury/
+|   +-- cash_positions.json, cash_forecasts.json, cash_pools.json,
+|       debt_instruments.json, hedging_instruments.json, hedge_relationships.json,
+|       bank_guarantees.json, netting_runs.json
+|
++-- project_accounting/
+|   +-- projects.json, cost_lines.json, revenue_records.json,
+|       earned_value_metrics.json, change_orders.json, milestones.json
+|
++-- esg/
+|   +-- emission_records.json, energy_consumption.json, water_usage.json, ...
+|
++-- internal_controls/              CSV files for BI/analytics
+|   +-- internal_controls.csv
+|   +-- control_account_mappings.csv, control_process_mappings.csv
+|   +-- control_threshold_mappings.csv, control_doctype_mappings.csv
+|   +-- sod_conflict_pairs.csv, sod_rules.csv
+|   +-- coso_control_mapping.csv
+|   +-- internal_controls.json, sod_violations.json
+|
++-- audit/                          33+ audit files
+|   +-- audit_engagements.json, audit_workpapers.json, audit_evidence.json
+|   +-- audit_risk_assessments.json, audit_findings.json, audit_judgments.json
+|   +-- audit_confirmations.json, audit_procedure_steps.json, audit_samples.json
+|   +-- engagement_letters.json (ISA 210)
+|   +-- combined_risk_assessments.json (ISA 315)
+|   +-- significant_transaction_classes.json (ISA 315 SCOTS)
+|   +-- materiality_calculations.json (ISA 320)
+|   +-- service_organizations.json, soc_reports.json, user_entity_controls.json (ISA 402)
+|   +-- unusual_items.json, analytical_relationships.json (ISA 520)
+|   +-- sampling_plans.json, sampled_items.json (ISA 530)
+|   +-- accounting_estimates.json (ISA 540)
+|   +-- subsequent_events.json (ISA 560)
+|   +-- going_concern_assessments.json (ISA 570)
+|   +-- component_auditors.json, group_audit_plan.json,
+|   |   component_instructions.json, component_reports.json (ISA 600)
+|   +-- audit_opinions.json, key_audit_matters.json (ISA 700/701)
+|   +-- sox_302_certifications.json, sox_404_assessments.json
+|   +-- isa_mappings.json, isa_pcaob_mappings.json
+|
++-- banking/
+|   +-- banking_customers.json, banking_accounts.json, banking_transactions.json,
+|       aml_transaction_labels.json, aml_customer_labels.json, aml_narratives.json
+|
++-- sales_kpi_budgets/
+|   +-- sales_quotes.json, management_kpis.json, budgets.json
+|
++-- process_mining/                 OCEL 2.0 JSON, XES 2.0, process variants
++-- graphs/                         PyTorch Geometric, Neo4j CSV+Cypher, DGL, RustGraph
++-- labels/                         anomaly_labels, fraud_labels, quality_labels
++-- standards/                      Compliance standards, cross-references, filings
++-- events/                         process_evolution_events, organizational_events
 ```
 
 ---
@@ -710,14 +714,14 @@ datasynth-data fingerprint validate ./fp.dsf
 datasynth-data fingerprint evaluate --fingerprint ./fp.dsf --synthetic ./synthetic/
 ```
 
-| Privacy Level | Epsilon (ε) | k-Anonymity | Description |
-|---------------|-------------|-------------|-------------|
-| minimal       | 5.0         | 3           | Higher utility, lower privacy |
-| standard      | 1.0         | 5           | Balanced (default) |
-| high          | 0.5         | 10          | Higher privacy |
-| maximum       | 0.1         | 20          | Maximum privacy |
+| Privacy Level | Epsilon | k-Anonymity | Description |
+|---------------|---------|-------------|-------------|
+| minimal       | 5.0     | 3           | Higher utility, lower privacy |
+| standard      | 1.0     | 5           | Balanced (default) |
+| high          | 0.5     | 10          | Higher privacy |
+| maximum       | 0.1     | 20          | Maximum privacy |
 
-Features include Rényi DP and zCDP composition accounting, privacy budget management, federated fingerprinting for distributed data, membership inference attack testing, and cryptographic synthetic data certificates (HMAC-SHA256).
+Includes Renyi DP and zCDP composition accounting, privacy budget management, federated fingerprinting for distributed data, membership inference attack testing, and cryptographic synthetic data certificates (HMAC-SHA256).
 
 ---
 
@@ -766,7 +770,7 @@ Features include Rényi DP and zCDP composition accounting, privacy budget manag
 
 ## License
 
-Copyright 2024–2026 Michael Ivertowski
+Copyright 2024-2026 Michael Ivertowski
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
