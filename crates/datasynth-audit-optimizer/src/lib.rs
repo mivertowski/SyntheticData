@@ -1,6 +1,7 @@
 //! Audit FSM optimizer — graph analysis and Monte Carlo simulation.
 
 pub mod benchmark_comparison;
+pub mod blueprint_testing;
 pub mod calibration;
 pub mod conformance;
 pub mod constrained;
