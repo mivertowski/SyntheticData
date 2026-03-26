@@ -10,6 +10,8 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Distribution, LogNormal};
 
+use serde::Serialize;
+
 use crate::artifact::ArtifactBag;
 use crate::context::EngagementContext;
 use crate::dispatch::StepDispatcher;
@@ -25,6 +27,7 @@ use crate::schema::{AuditBlueprint, BlueprintProcedure, GenerationOverlay, Proce
 // ---------------------------------------------------------------------------
 
 /// The output of a complete engagement simulation.
+#[derive(Serialize)]
 pub struct EngagementResult {
     /// Ordered event trail for the entire engagement.
     pub event_log: Vec<AuditEvent>,
@@ -616,7 +619,7 @@ mod tests {
     #[test]
     fn test_run_engagement_produces_events() {
         let mut engine = build_engine(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         // With 9 procedures, each having >= 3 transition events, we expect
@@ -630,7 +633,7 @@ mod tests {
 
     #[test]
     fn test_deterministic_output() {
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
 
         let mut engine1 = build_engine(42);
         let result1 = engine1.run_engagement(&ctx).unwrap();
@@ -654,7 +657,7 @@ mod tests {
     #[test]
     fn test_all_procedures_reach_completed() {
         let mut engine = build_engine(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         // All 9 procedures should reach "completed".
@@ -670,7 +673,7 @@ mod tests {
     #[test]
     fn test_precondition_ordering_respected() {
         let mut engine = build_engine(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         // accept_engagement must appear before planning_materiality in the
@@ -697,7 +700,7 @@ mod tests {
     #[test]
     fn test_step_events_emitted() {
         let mut engine = build_engine(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         let step_events: Vec<&AuditEvent> = result
@@ -721,7 +724,7 @@ mod tests {
         let overlay = default_overlay();
         let rng = ChaCha8Rng::seed_from_u64(42);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         // Continuous phase IDs (order < 0) should NOT appear in phases_completed.
@@ -753,7 +756,7 @@ mod tests {
         let overlay = default_overlay(); // max_self_loop_iterations = 5
         let rng = ChaCha8Rng::seed_from_u64(42);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         // Count self-loop transitions per procedure.
@@ -784,7 +787,7 @@ mod tests {
 
         let rng = ChaCha8Rng::seed_from_u64(42);
         let mut engine = AuditFsmEngine::new(bwp.clone(), overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let filtered = engine.run_engagement(&ctx).unwrap();
 
         // Run unfiltered for comparison.
@@ -806,7 +809,7 @@ mod tests {
         let overlay = default_overlay();
         let rng = ChaCha8Rng::seed_from_u64(42);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         // Verify artifacts were generated.
@@ -830,7 +833,7 @@ mod tests {
         let overlay = default_overlay(); // iteration_limits.default = 30
         let rng = ChaCha8Rng::seed_from_u64(42);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         let completed = result
@@ -867,7 +870,7 @@ mod tests {
         };
         let rng = ChaCha8Rng::seed_from_u64(42);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         // develop_findings should reach "closed" with its generous per-procedure limit

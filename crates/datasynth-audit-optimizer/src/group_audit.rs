@@ -14,14 +14,14 @@ use datasynth_audit_fsm::loader::*;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
 // Config types
 // ---------------------------------------------------------------------------
 
 /// Top-level configuration for a group audit simulation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupAuditConfig {
     /// Identifier for the group (parent) entity.
     pub group_entity: String,
@@ -38,7 +38,7 @@ pub struct GroupAuditConfig {
 }
 
 /// Configuration for a single component within the group.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComponentConfig {
     /// Entity identifier for the component.
     pub entity_id: String,
@@ -53,7 +53,7 @@ pub struct ComponentConfig {
 }
 
 /// ISA 600 component significance classification.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ComponentType {
     /// Significant component — requires full audit or specified procedures.
     Significant,
@@ -206,7 +206,7 @@ pub fn run_group_audit(config: &GroupAuditConfig) -> Result<GroupAuditReport, Au
 
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-        let mut ctx = EngagementContext::test_default();
+        let mut ctx = EngagementContext::demo();
         ctx.company_code = comp.entity_id.clone();
 
         let result = engine.run_engagement(&ctx)?;

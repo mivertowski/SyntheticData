@@ -129,9 +129,7 @@ mod tests {
 
         let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
         let mut engine = AuditFsmEngine::new(bwp, default_overlay(), ChaCha8Rng::seed_from_u64(42));
-        let result = engine
-            .run_engagement(&EngagementContext::test_default())
-            .unwrap();
+        let result = engine.run_engagement(&EngagementContext::demo()).unwrap();
 
         let ocel = project_to_ocel(&result.event_log);
         assert_eq!(ocel.ocel_version, "2.0");

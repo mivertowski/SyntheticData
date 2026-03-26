@@ -90,9 +90,10 @@ pub struct ComparisonReport {
 /// The same `seed` and the default overlay are used for every engagement so
 /// that differences in the report reflect methodology (blueprint) rather than
 /// randomness or configuration.
-pub fn run_comparison(seed: u64) -> ComparisonReport {
+pub fn run_comparison(seed: u64, context: Option<&EngagementContext>) -> ComparisonReport {
     let overlay = default_overlay();
-    let ctx = EngagementContext::test_default();
+    let default_ctx = EngagementContext::demo();
+    let ctx = context.unwrap_or(&default_ctx);
     let mut benchmarks = Vec::new();
 
     // (display name, short key, loader)
@@ -185,7 +186,7 @@ pub fn run_comparison(seed: u64) -> ComparisonReport {
             overlay.clone(),
             ChaCha8Rng::seed_from_u64(seed),
         );
-        let result = engine.run_engagement(&ctx).unwrap();
+        let result = engine.run_engagement(ctx).unwrap();
 
         let completed = result
             .procedure_states
@@ -283,7 +284,7 @@ mod tests {
 
     #[test]
     fn test_comparison_runs_all_firms() {
-        let report = run_comparison(42);
+        let report = run_comparison(42, None);
         // All 6 blueprints should load; require at least 5 to be tolerant of
         // potential future blueprint removal.
         assert!(
@@ -295,7 +296,7 @@ mod tests {
 
     #[test]
     fn test_comparison_shows_differences() {
-        let report = run_comparison(42);
+        let report = run_comparison(42, None);
         // The blueprints should not all be structurally identical — at least
         // some pair should differ in phase or procedure count.
         let phases: Vec<usize> = report.benchmarks.iter().map(|b| b.phases).collect();
@@ -310,7 +311,7 @@ mod tests {
 
     #[test]
     fn test_comparison_report_serializes() {
-        let report = run_comparison(42);
+        let report = run_comparison(42, None);
         let json = serde_json::to_string(&report).expect("serialization failed");
         let decoded: ComparisonReport =
             serde_json::from_str(&json).expect("deserialization failed");
@@ -324,8 +325,8 @@ mod tests {
 
     #[test]
     fn test_comparison_deterministic() {
-        let r1 = run_comparison(99);
-        let r2 = run_comparison(99);
+        let r1 = run_comparison(99, None);
+        let r2 = run_comparison(99, None);
         assert_eq!(r1.benchmarks.len(), r2.benchmarks.len());
         for (b1, b2) in r1.benchmarks.iter().zip(r2.benchmarks.iter()) {
             assert_eq!(b1.firm, b2.firm);

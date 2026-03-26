@@ -34,7 +34,7 @@ pub enum BenchmarkComplexity {
 }
 
 /// Configuration for benchmark dataset generation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkConfig {
     /// Complexity level controlling blueprint/overlay selection.
     pub complexity: BenchmarkComplexity,
@@ -136,7 +136,7 @@ pub fn generate_benchmark(config: &BenchmarkConfig) -> Result<BenchmarkDataset, 
 
     let rng = ChaCha8Rng::seed_from_u64(config.seed);
     let mut engine = crate::engine::AuditFsmEngine::new(bwp, overlay, rng);
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine.run_engagement(&ctx)?;
 
     let event_count = result.event_log.len();

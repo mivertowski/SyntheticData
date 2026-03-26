@@ -13,14 +13,14 @@ use datasynth_audit_fsm::error::AuditFsmError;
 use datasynth_audit_fsm::loader::*;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
 // Suite and expectation types
 // ---------------------------------------------------------------------------
 
 /// A test suite for validating a single blueprint.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlueprintTestSuite {
     /// Blueprint selector (e.g. `"fsa"`, `"ia"`, or a file path).
     pub blueprint: String,
@@ -31,7 +31,7 @@ pub struct BlueprintTestSuite {
 }
 
 /// Metric thresholds that the blueprint engagement must satisfy.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlueprintExpectations {
     /// Minimum total FSM events.
     pub min_events: usize,
@@ -212,7 +212,7 @@ pub fn test_blueprint(suite: &BlueprintTestSuite, seed: u64) -> BlueprintTestRes
         let rng = ChaCha8Rng::seed_from_u64(seed);
 
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx)?;
 
         let total_procs = result.procedure_states.len();

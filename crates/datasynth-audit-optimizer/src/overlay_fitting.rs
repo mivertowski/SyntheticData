@@ -108,6 +108,7 @@ pub fn fit_overlay(
     max_iterations: usize,
     samples_per_iteration: usize,
     base_seed: u64,
+    context: &EngagementContext,
 ) -> FittedOverlay {
     assert!(max_iterations >= 1, "max_iterations must be >= 1");
     assert!(
@@ -118,7 +119,8 @@ pub fn fit_overlay(
     let mut overlay = default_overlay();
     let mut best_residual = f64::MAX;
     let mut best_overlay = overlay.clone();
-    let mut best_metrics = compute_metrics(bwp, &overlay, samples_per_iteration, base_seed, 0);
+    let mut best_metrics =
+        compute_metrics(bwp, &overlay, samples_per_iteration, base_seed, 0, context);
     let mut iterations_used = 0;
 
     for iter in 0..max_iterations {
@@ -130,6 +132,7 @@ pub fn fit_overlay(
             samples_per_iteration,
             base_seed,
             iter as u64 * samples_per_iteration as u64,
+            context,
         );
         let residual = compute_residual(&metrics, profile);
 
@@ -174,9 +177,8 @@ fn compute_metrics(
     samples: usize,
     base_seed: u64,
     seed_offset: u64,
+    context: &EngagementContext,
 ) -> EngagementMetrics {
-    let ctx = EngagementContext::test_default();
-
     let mut total_duration = 0.0;
     let mut total_events = 0.0;
     let mut total_findings = 0.0;
@@ -190,7 +192,7 @@ fn compute_metrics(
         let rng = ChaCha8Rng::seed_from_u64(iter_seed);
         let mut engine = AuditFsmEngine::new(bwp.clone(), overlay.clone(), rng);
 
-        let result = match engine.run_engagement(&ctx) {
+        let result = match engine.run_engagement(context) {
             Ok(r) => r,
             Err(_) => continue,
         };
@@ -366,7 +368,7 @@ mod tests {
             target_anomaly_rate: 0.05,
             target_completion_rate: 1.0,
         };
-        let fitted = fit_overlay(&bwp, &profile, 15, 3, 42);
+        let fitted = fit_overlay(&bwp, &profile, 15, 3, 42, &EngagementContext::demo());
         // Achieved duration should be closer to 2000 than default (~800).
         assert!(
             fitted.achieved_metrics.avg_duration_hours > 1000.0,
@@ -387,7 +389,7 @@ mod tests {
             target_anomaly_rate: 0.20,
             target_completion_rate: 1.0,
         };
-        let fitted = fit_overlay(&bwp, &profile, 15, 3, 42);
+        let fitted = fit_overlay(&bwp, &profile, 15, 3, 42, &EngagementContext::demo());
         assert!(
             fitted.achieved_metrics.avg_anomaly_rate > 0.05,
             "Anomaly rate {:.3} should increase toward target 0.20",
@@ -406,7 +408,7 @@ mod tests {
             target_anomaly_rate: 0.05,
             target_completion_rate: 1.0,
         };
-        let fitted = fit_overlay(&bwp, &profile, 10, 3, 42);
+        let fitted = fit_overlay(&bwp, &profile, 10, 3, 42, &EngagementContext::demo());
         // Overlay should have valid parameter ranges.
         assert!(fitted.overlay.transitions.defaults.revision_probability >= 0.0);
         assert!(fitted.overlay.transitions.defaults.revision_probability <= 0.5);
@@ -424,7 +426,7 @@ mod tests {
             target_anomaly_rate: 0.05,
             target_completion_rate: 1.0,
         };
-        let fitted = fit_overlay(&bwp, &profile, 5, 2, 42);
+        let fitted = fit_overlay(&bwp, &profile, 5, 2, 42, &EngagementContext::demo());
         let json = serde_json::to_string(&fitted).unwrap();
         assert!(json.contains("converged"));
         assert!(json.contains("residual"));
@@ -441,8 +443,8 @@ mod tests {
             target_anomaly_rate: 0.05,
             target_completion_rate: 1.0,
         };
-        let f1 = fit_overlay(&bwp, &profile, 5, 2, 42);
-        let f2 = fit_overlay(&bwp, &profile, 5, 2, 42);
+        let f1 = fit_overlay(&bwp, &profile, 5, 2, 42, &EngagementContext::demo());
+        let f2 = fit_overlay(&bwp, &profile, 5, 2, 42, &EngagementContext::demo());
         assert_eq!(f1.iterations, f2.iterations);
         assert!(
             (f1.residual - f2.residual).abs() < 0.001,

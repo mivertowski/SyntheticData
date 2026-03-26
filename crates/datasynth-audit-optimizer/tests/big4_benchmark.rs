@@ -6,7 +6,7 @@ use datasynth_audit_optimizer::benchmark_comparison::{format_comparison_report, 
 
 #[test]
 fn test_big4_benchmark_evaluation() {
-    let report = run_comparison(42);
+    let report = run_comparison(42, None);
     let formatted = format_comparison_report(&report);
     println!("\n{}", formatted);
 

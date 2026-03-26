@@ -33,7 +33,7 @@ fn test_gam_full_engagement() {
     let overlay = default_overlay();
     let rng = ChaCha8Rng::seed_from_u64(42);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine.run_engagement(&ctx).unwrap();
 
     println!("GAM engagement results:");

@@ -53,14 +53,20 @@ pub struct MonteCarloReport {
 /// * `bwp` – Validated blueprint with preconditions.
 /// * `iterations` – Number of stochastic walks to run (must be >= 1).
 /// * `seed` – Base RNG seed; iteration `i` uses `seed.wrapping_add(i)`.
+/// * `context` – Engagement context for the simulation runs.
+///
+/// # Errors
+///
+/// Returns an error if `iterations` is zero.
 pub fn run_monte_carlo(
     bwp: &BlueprintWithPreconditions,
     iterations: usize,
     seed: u64,
-) -> MonteCarloReport {
-    assert!(iterations >= 1, "iterations must be >= 1");
-
-    let ctx = EngagementContext::test_default();
+    context: &EngagementContext,
+) -> Result<MonteCarloReport, String> {
+    if iterations == 0 {
+        return Err("iterations must be >= 1".into());
+    }
 
     // Per-procedure accumulators.
     let mut total_events: u64 = 0;
@@ -82,7 +88,7 @@ pub fn run_monte_carlo(
 
         let mut engine = AuditFsmEngine::new(bwp.clone(), overlay, rng);
 
-        let result = match engine.run_engagement(&ctx) {
+        let result = match engine.run_engagement(context) {
             Ok(r) => r,
             // Skip failed iterations rather than panicking.
             Err(_) => continue,
@@ -137,7 +143,7 @@ pub fn run_monte_carlo(
     revision_hotspots.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     revision_hotspots.truncate(5);
 
-    MonteCarloReport {
+    Ok(MonteCarloReport {
         iterations,
         avg_events: total_events as f64 / n,
         avg_duration_hours: total_duration / n,
@@ -145,7 +151,7 @@ pub fn run_monte_carlo(
         bottleneck_procedures,
         revision_hotspots,
         happy_path,
-    }
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -185,7 +191,8 @@ mod tests {
     #[test]
     fn test_monte_carlo_fsa() {
         let bwp = load_fsa();
-        let report = run_monte_carlo(&bwp, 10, 42);
+        let ctx = EngagementContext::demo();
+        let report = run_monte_carlo(&bwp, 10, 42, &ctx).unwrap();
 
         assert!(
             report.avg_events > 0.0,
@@ -206,9 +213,10 @@ mod tests {
     #[test]
     fn test_monte_carlo_deterministic() {
         let bwp = load_fsa();
+        let ctx = EngagementContext::demo();
 
-        let report1 = run_monte_carlo(&bwp, 10, 42);
-        let report2 = run_monte_carlo(&bwp, 10, 42);
+        let report1 = run_monte_carlo(&bwp, 10, 42, &ctx).unwrap();
+        let report2 = run_monte_carlo(&bwp, 10, 42, &ctx).unwrap();
 
         assert_eq!(
             report1.avg_events, report2.avg_events,
@@ -223,7 +231,8 @@ mod tests {
     #[test]
     fn test_monte_carlo_report_serializes() {
         let bwp = load_fsa();
-        let report = run_monte_carlo(&bwp, 5, 99);
+        let ctx = EngagementContext::demo();
+        let report = run_monte_carlo(&bwp, 5, 99, &ctx).unwrap();
 
         let json = serde_json::to_string(&report).expect("report should serialize to JSON");
 

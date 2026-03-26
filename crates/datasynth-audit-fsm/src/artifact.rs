@@ -5,6 +5,8 @@
 //! `AuditSnapshot` used by the enhanced orchestrator, but only include the
 //! types that the FSM engine actually generates.
 
+use serde::Serialize;
+
 use datasynth_core::models::audit::{
     AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
     AuditSample, CombinedRiskAssessment, ConfirmationResponse, EngagementLetter,
@@ -18,7 +20,7 @@ use datasynth_standards::audit::opinion::{AuditOpinion, KeyAuditMatter};
 ///
 /// Each field corresponds to a single artifact type.  The bag starts empty
 /// (`Default`) and grows as the engine walks through FSM steps.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct ArtifactBag {
     /// Audit engagements (ISA 210/220).
     pub engagements: Vec<AuditEngagement>,

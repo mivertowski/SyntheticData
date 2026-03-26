@@ -45,7 +45,7 @@ fn test_ia_full_engagement() {
     let rng = ChaCha8Rng::seed_from_u64(42);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine
         .run_engagement(&ctx)
         .expect("IA engagement run must succeed");
@@ -98,7 +98,7 @@ fn test_ia_full_engagement() {
 
 #[test]
 fn test_ia_determinism() {
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
 
     let mut engine1 = build_ia_engine(99);
     let result1 = engine1
@@ -158,7 +158,7 @@ fn test_ia_c2ce_lifecycle_events() {
     // (allowing for the engine's MAX_ITERATIONS guard and any skips).
 
     let mut engine = build_ia_engine(42);
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine
         .run_engagement(&ctx)
         .expect("IA engagement must succeed");
@@ -213,7 +213,7 @@ fn test_ia_c2ce_lifecycle_events() {
 
 #[test]
 fn test_ia_with_financial_discriminator() {
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
 
     // Build a filtered engine: only procedures whose "categories" discriminator
     // includes "financial" will be allowed to execute.

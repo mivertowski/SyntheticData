@@ -18,14 +18,14 @@ use datasynth_audit_fsm::loader::*;
 use datasynth_audit_fsm::schema::GenerationOverlay;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
 // Config types
 // ---------------------------------------------------------------------------
 
 /// Top-level configuration for a portfolio simulation run.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PortfolioConfig {
     /// Specifications for each engagement to simulate.
     pub engagements: Vec<EngagementSpec>,
@@ -36,7 +36,7 @@ pub struct PortfolioConfig {
 }
 
 /// Specification of a single engagement within the portfolio.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EngagementSpec {
     /// Identifier for the entity being audited.
     pub entity_id: String,
@@ -55,7 +55,7 @@ pub struct EngagementSpec {
 }
 
 /// Risk profile for an entity.
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum RiskProfile {
     High,
@@ -64,14 +64,14 @@ pub enum RiskProfile {
 }
 
 /// Pool of shared resources across all engagements.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourcePool {
     /// Slots keyed by role name.
     pub roles: HashMap<String, ResourceSlot>,
 }
 
 /// A single resource slot (headcount + hours per person).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceSlot {
     /// Number of people available in this role.
     pub count: usize,
@@ -80,7 +80,6 @@ pub struct ResourceSlot {
     /// Unavailable date ranges as `(start_date, end_date)` pairs (ISO 8601 strings).
     /// Each pair reduces available hours by the number of business days in the range
     /// multiplied by 8 hours per day per person.
-    #[allow(dead_code)]
     pub unavailable_periods: Vec<(String, String)>,
 }
 
@@ -126,7 +125,7 @@ impl ResourcePool {
 }
 
 /// Correlation parameters governing how findings propagate across engagements.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CorrelationConfig {
     /// Probability that a finding shared by 2+ entities in the same industry
     /// is flagged as systemic.
@@ -280,7 +279,7 @@ pub fn simulate_portfolio(config: &PortfolioConfig) -> Result<PortfolioReport, A
         let overlay = resolve_overlay(&spec.overlay)?;
         let rng = ChaCha8Rng::seed_from_u64(spec.seed);
         let mut engine = AuditFsmEngine::new(bwp.clone(), overlay.clone(), rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
 
         let result = engine.run_engagement(&ctx)?;
 

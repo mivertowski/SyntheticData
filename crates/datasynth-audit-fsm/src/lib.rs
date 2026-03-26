@@ -18,7 +18,7 @@
 //! let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default)).unwrap();
 //! let rng = ChaCha8Rng::seed_from_u64(42);
 //! let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-//! let ctx = EngagementContext::test_default();
+//! let ctx = EngagementContext::demo();
 //! let result = engine.run_engagement(&ctx).unwrap();
 //! let json = export_events_to_json(&result.event_log).unwrap();
 //! ```

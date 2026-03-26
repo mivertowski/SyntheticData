@@ -43,7 +43,7 @@ fn test_fsa_full_engagement() {
     let rng = ChaCha8Rng::seed_from_u64(42);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine
         .run_engagement(&ctx)
         .expect("engagement run must succeed");
@@ -118,7 +118,7 @@ fn test_fsa_full_engagement() {
 
 #[test]
 fn test_fsa_determinism_across_runs() {
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
 
     let mut engine1 = build_engine(99);
     let result1 = engine1
@@ -189,7 +189,7 @@ transitions:
     let rng = ChaCha8Rng::seed_from_u64(7);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine
         .run_engagement(&ctx)
         .expect("engagement with custom overlay must succeed");
@@ -221,7 +221,7 @@ transitions:
 #[test]
 fn test_fsa_export_to_temp_file() {
     let mut engine = build_engine(123);
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine
         .run_engagement(&ctx)
         .expect("engagement must succeed");

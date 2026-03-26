@@ -33,7 +33,7 @@ fn evaluate_wave2_features() {
         overlay.clone(),
         ChaCha8Rng::seed_from_u64(42),
     );
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine.run_engagement(&ctx).unwrap();
 
     let completed = result

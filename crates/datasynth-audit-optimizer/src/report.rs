@@ -68,6 +68,7 @@ pub fn format_monte_carlo_report(report: &MonteCarloReport) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use datasynth_audit_fsm::context::EngagementContext;
     use datasynth_audit_fsm::loader::BlueprintWithPreconditions;
 
     use crate::monte_carlo::run_monte_carlo;
@@ -114,7 +115,7 @@ mod tests {
     #[test]
     fn test_format_monte_carlo_report_non_empty() {
         let bwp = load_fsa();
-        let report = run_monte_carlo(&bwp, 5, 42);
+        let report = run_monte_carlo(&bwp, 5, 42, &EngagementContext::demo()).unwrap();
         let text = format_monte_carlo_report(&report);
 
         assert!(!text.is_empty(), "formatted MC report should not be empty");
@@ -135,7 +136,7 @@ mod tests {
     #[test]
     fn test_format_monte_carlo_report_shows_iteration_count() {
         let bwp = load_fsa();
-        let report = run_monte_carlo(&bwp, 7, 0);
+        let report = run_monte_carlo(&bwp, 7, 0, &EngagementContext::demo()).unwrap();
         let text = format_monte_carlo_report(&report);
 
         assert!(

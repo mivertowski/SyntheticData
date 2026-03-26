@@ -1,5 +1,6 @@
 //! Error types for FSM operations.
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// Errors that can occur during blueprint loading, validation, or FSM execution.
@@ -46,7 +47,7 @@ pub enum AuditFsmError {
 }
 
 /// A single validation violation found during blueprint validation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationViolation {
     /// Location of the violation (e.g. `"procedure.accept_engagement.step.step_1"`).
     pub location: String,

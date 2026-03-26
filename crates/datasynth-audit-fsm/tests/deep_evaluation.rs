@@ -12,7 +12,7 @@ use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
 fn ctx() -> EngagementContext {
-    EngagementContext::test_default()
+    EngagementContext::demo()
 }
 
 #[test]

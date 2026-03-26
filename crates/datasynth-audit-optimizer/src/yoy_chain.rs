@@ -12,14 +12,14 @@ use datasynth_audit_fsm::error::AuditFsmError;
 use datasynth_audit_fsm::loader::*;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
 
 /// Configuration for a year-over-year engagement chain.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YoyChainConfig {
     /// Identifier for the entity being audited.
     pub entity_id: String,
@@ -165,7 +165,7 @@ pub fn run_yoy_chain(config: &YoyChainConfig) -> Result<YoyChainReport, AuditFsm
         let mut engine = AuditFsmEngine::new(bwp.clone(), overlay.clone(), rng);
 
         // Build context with the appropriate fiscal year.
-        let mut ctx = EngagementContext::test_default();
+        let mut ctx = EngagementContext::demo();
         ctx.fiscal_year = year;
         ctx.company_code = config.entity_id.clone();
 

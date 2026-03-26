@@ -5,11 +5,14 @@
 //! The default [`TemplateContentGenerator`] uses simple string interpolation.
 //! Alternative implementations (e.g. LLM-backed) can implement the same trait.
 
+use serde::{Deserialize, Serialize};
+
 // ---------------------------------------------------------------------------
 // Context types
 // ---------------------------------------------------------------------------
 
 /// Context for generating finding narratives.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FindingContext {
     /// The procedure within which the finding was identified.
     pub procedure_id: String,
@@ -26,6 +29,7 @@ pub struct FindingContext {
 }
 
 /// Context for generating workpaper narratives.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkpaperContext {
     /// The procedure this workpaper documents.
     pub procedure_id: String,
@@ -38,6 +42,7 @@ pub struct WorkpaperContext {
 }
 
 /// Context for generating management responses to audit findings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseContext {
     /// Category of the finding being responded to.
     pub finding_type: String,
@@ -49,6 +54,7 @@ pub struct ResponseContext {
 
 /// Context for generating analytical procedure narratives, populated from
 /// the analytics inventory.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalyticalContext {
     /// Parent procedure identifier.
     pub procedure_id: String,

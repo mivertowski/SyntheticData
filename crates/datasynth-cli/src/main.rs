@@ -2856,7 +2856,7 @@ fn handle_audit_run(
 
     let rng = ChaCha8Rng::seed_from_u64(seed);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
 
     let start = std::time::Instant::now();
     let result = engine
@@ -2961,7 +2961,7 @@ fn handle_audit_diff(blueprint_a_str: &str, blueprint_b_str: &str) -> Result<()>
     use rand_chacha::ChaCha8Rng;
 
     let overlay = default_overlay();
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
 
     // Generate events from blueprint A and discover its structure.
     let rng_a = ChaCha8Rng::seed_from_u64(42);

@@ -5,7 +5,7 @@
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use datasynth_audit_fsm::schema::{AuditBlueprint, BlueprintProcedure, GenerationOverlay};
 
@@ -14,7 +14,7 @@ use datasynth_audit_fsm::schema::{AuditBlueprint, BlueprintProcedure, Generation
 // ---------------------------------------------------------------------------
 
 /// Constraints that limit which procedures can be included in a plan.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceConstraints {
     /// Maximum total hours available.
     pub total_budget_hours: f64,

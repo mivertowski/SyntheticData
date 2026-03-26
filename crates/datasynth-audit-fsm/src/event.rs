@@ -183,7 +183,7 @@ impl AuditEventBuilder {
         let event_id = uuid::Builder::from_random_bytes(bytes).into_uuid();
 
         let timestamp = self.timestamp.unwrap_or_else(|| {
-            chrono::NaiveDate::from_ymd_opt(2025, 1, 1)
+            chrono::NaiveDate::from_ymd_opt(1970, 1, 1)
                 .unwrap_or_default()
                 .and_hms_opt(0, 0, 0)
                 .unwrap_or_default()

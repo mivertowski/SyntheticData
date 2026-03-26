@@ -235,19 +235,19 @@ pub fn compute_generalization(
     overlay: &GenerationOverlay,
     blueprint: &AuditBlueprint,
     base_seed: u64,
+    context: &EngagementContext,
 ) -> f64 {
     let seeds = [
         base_seed,
         base_seed.wrapping_add(1000),
         base_seed.wrapping_add(2000),
     ];
-    let ctx = EngagementContext::test_default();
     let mut fitness_values = Vec::new();
 
     for seed in &seeds {
         let rng = ChaCha8Rng::seed_from_u64(*seed);
         let mut engine = AuditFsmEngine::new(bwp.clone(), overlay.clone(), rng);
-        if let Ok(result) = engine.run_engagement(&ctx) {
+        if let Ok(result) = engine.run_engagement(context) {
             let report = analyze_conformance(&result.event_log, blueprint);
             fitness_values.push(report.fitness);
         }
@@ -279,13 +279,20 @@ pub fn compute_generalization(
 /// `events` — the audit event trail with `is_anomaly` ground-truth labels.
 /// `predictions` — one boolean per event: `true` = "detector thinks anomaly".
 ///
-/// Panics if `events.len() != predictions.len()`.
-pub fn evaluate_detector(events: &[AuditEvent], predictions: &[bool]) -> AnomalyDetectionMetrics {
-    assert_eq!(
-        events.len(),
-        predictions.len(),
-        "events and predictions must have the same length"
-    );
+/// # Errors
+///
+/// Returns an error if `events.len() != predictions.len()`.
+pub fn evaluate_detector(
+    events: &[AuditEvent],
+    predictions: &[bool],
+) -> Result<AnomalyDetectionMetrics, String> {
+    if events.len() != predictions.len() {
+        return Err(format!(
+            "events and predictions must have the same length ({} vs {})",
+            events.len(),
+            predictions.len()
+        ));
+    }
 
     let mut tp = 0usize;
     let mut fp = 0usize;
@@ -317,7 +324,7 @@ pub fn evaluate_detector(events: &[AuditEvent], predictions: &[bool]) -> Anomaly
         0.0
     };
 
-    AnomalyDetectionMetrics {
+    Ok(AnomalyDetectionMetrics {
         true_positives: tp,
         false_positives: fp,
         false_negatives: fn_,
@@ -325,7 +332,7 @@ pub fn evaluate_detector(events: &[AuditEvent], predictions: &[bool]) -> Anomaly
         precision,
         recall,
         f1,
-    }
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -352,7 +359,7 @@ mod tests {
         let bp = bwp.blueprint.clone();
         let rng = ChaCha8Rng::seed_from_u64(seed);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
         (result.event_log, bp)
     }
@@ -370,7 +377,7 @@ mod tests {
         overlay.anomalies.rules.clear();
         let rng = ChaCha8Rng::seed_from_u64(42);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let result = engine.run_engagement(&ctx).unwrap();
 
         let report = analyze_conformance(&result.event_log, &bp);
@@ -462,7 +469,8 @@ mod tests {
         let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
         let bp = bwp.blueprint.clone();
         let overlay = default_overlay();
-        let gen = compute_generalization(&bwp, &overlay, &bp, 42);
+        let ctx = EngagementContext::demo();
+        let gen = compute_generalization(&bwp, &overlay, &bp, 42, &ctx);
 
         assert!(
             gen >= 0.0 && gen <= 1.0,
@@ -482,7 +490,7 @@ mod tests {
         let (events, _bp) = run_fsa_engagement(BuiltinOverlay::Default, 42);
         // Perfect detector: predictions match ground truth exactly.
         let predictions: Vec<bool> = events.iter().map(|e| e.is_anomaly).collect();
-        let metrics = evaluate_detector(&events, &predictions);
+        let metrics = evaluate_detector(&events, &predictions).unwrap();
 
         assert!(
             (metrics.f1 - 1.0).abs() < f64::EPSILON || metrics.true_positives == 0,
@@ -497,7 +505,7 @@ mod tests {
         let (events, _bp) = run_fsa_engagement(BuiltinOverlay::Default, 42);
         // Naive detector: predicts everything as anomaly.
         let predictions = vec![true; events.len()];
-        let metrics = evaluate_detector(&events, &predictions);
+        let metrics = evaluate_detector(&events, &predictions).unwrap();
 
         // All actual anomalies found (FN=0) but many false positives.
         assert_eq!(metrics.false_negatives, 0);
@@ -508,7 +516,7 @@ mod tests {
     fn test_evaluate_detector_serializes() {
         let (events, _bp) = run_fsa_engagement(BuiltinOverlay::Default, 42);
         let predictions: Vec<bool> = events.iter().map(|e| e.is_anomaly).collect();
-        let metrics = evaluate_detector(&events, &predictions);
+        let metrics = evaluate_detector(&events, &predictions).unwrap();
 
         let json = serde_json::to_string(&metrics).unwrap();
         assert!(json.contains("f1"));

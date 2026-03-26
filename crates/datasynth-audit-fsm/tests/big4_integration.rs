@@ -312,7 +312,7 @@ fn test_kpmg_engagement() {
     let rng = ChaCha8Rng::seed_from_u64(42);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine
         .run_engagement(&ctx)
         .expect("KPMG engagement must succeed");
@@ -354,7 +354,7 @@ fn test_pwc_engagement() {
     let rng = ChaCha8Rng::seed_from_u64(42);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine
         .run_engagement(&ctx)
         .expect("PwC engagement must succeed");
@@ -397,7 +397,7 @@ fn test_deloitte_engagement() {
     let rng = ChaCha8Rng::seed_from_u64(42);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
     let result = engine
         .run_engagement(&ctx)
         .expect("Deloitte engagement must succeed");

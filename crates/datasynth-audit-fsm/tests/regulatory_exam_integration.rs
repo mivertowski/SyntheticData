@@ -379,7 +379,7 @@ fn test_regulatory_blueprint_engine_run() {
         .expect("regulatory exam blueprint must load");
 
     let overlay = default_overlay();
-    let context = EngagementContext::test_default();
+    let context = EngagementContext::demo();
     let rng = ChaCha8Rng::seed_from_u64(42);
 
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);

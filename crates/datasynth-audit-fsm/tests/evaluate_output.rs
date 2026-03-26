@@ -47,7 +47,7 @@ fn build_ia_engine(seed: u64) -> AuditFsmEngine {
 
 #[test]
 fn evaluate_fsm_engine_output() {
-    let ctx = EngagementContext::test_default();
+    let ctx = EngagementContext::demo();
 
     // ===================================================================
     // 1. Load both blueprints and run engagements
@@ -296,7 +296,7 @@ fn evaluate_fsm_engine_output() {
     // ===================================================================
     let mc_iterations = 10;
     let mc_seed = 42u64;
-    let mc_ctx = EngagementContext::test_default();
+    let mc_ctx = EngagementContext::demo();
 
     let mut total_events: u64 = 0;
     let mut total_duration: f64 = 0.0;

@@ -6,12 +6,13 @@
 
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::event::{AnomalySeverity, AuditAnomalyRecord, AuditAnomalyType, AuditEvent};
 
 /// Configuration for a single class of live anomaly injection.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LiveInjectionConfig {
     /// The type of anomaly to inject.
     pub anomaly_type: AuditAnomalyType,
@@ -112,7 +113,7 @@ mod tests {
         let overlay = default_overlay();
         let rng = ChaCha8Rng::seed_from_u64(42);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         engine.run_engagement(&ctx).unwrap().event_log
     }
 

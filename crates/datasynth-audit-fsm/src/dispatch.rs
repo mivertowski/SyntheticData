@@ -1289,7 +1289,7 @@ mod tests {
     #[test]
     fn test_dispatch_engagement() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         let step = step_with_command("s1", "evaluate_client_acceptance");
@@ -1302,7 +1302,7 @@ mod tests {
     #[test]
     fn test_dispatch_materiality() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         let step = step_with_command("s1", "determine_overall_materiality");
@@ -1315,7 +1315,7 @@ mod tests {
     #[test]
     fn test_dispatch_engagement_letter_requires_engagement() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Generate an engagement first, then dispatch the letter.
@@ -1334,7 +1334,7 @@ mod tests {
         // substantive, so it should auto-create an engagement and then
         // successfully produce a letter.
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         let step = step_with_command("s1", "agree_engagement_terms");
@@ -1355,7 +1355,7 @@ mod tests {
     #[test]
     fn test_dispatch_risk_assessment() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Create engagement first.
@@ -1373,7 +1373,7 @@ mod tests {
     #[test]
     fn test_dispatch_cra() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         let step = step_with_command("s1", "assess_risks");
@@ -1385,7 +1385,7 @@ mod tests {
     #[test]
     fn test_dispatch_going_concern() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         let step = step_with_command("s1", "determine_going_concern_doubt");
@@ -1397,7 +1397,7 @@ mod tests {
     #[test]
     fn test_dispatch_subsequent_events() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         let step = step_with_command("s1", "perform_subsequent_events_review");
@@ -1411,7 +1411,7 @@ mod tests {
     #[test]
     fn test_dispatch_unknown_command_creates_workpaper() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // First create an engagement so the generic workpaper can use it.
@@ -1427,7 +1427,7 @@ mod tests {
     #[test]
     fn test_dispatch_opinion() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Build up prerequisite artifacts.
@@ -1453,7 +1453,7 @@ mod tests {
     #[test]
     fn test_dispatch_sampling() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // dispatch_sampling will auto-generate CRAs if none present.
@@ -1469,7 +1469,7 @@ mod tests {
     #[test]
     fn test_dispatch_analytical_procedures() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Need an engagement for the analytical procedure generator.
@@ -1485,7 +1485,7 @@ mod tests {
     #[test]
     fn test_dispatch_confirmations() {
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Need an engagement.
@@ -1509,7 +1509,7 @@ mod tests {
         // create the engagement, and subsequent commands should produce
         // typed artifacts (not just generic workpapers).
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // IA engagement setup (no evaluate_client_acceptance).
@@ -1587,7 +1587,7 @@ mod tests {
     fn test_ia_finding_commands_dispatch() {
         // Test C2CE commands produce findings.
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Bootstrap engagement + workpapers so findings have context.
@@ -1633,7 +1633,7 @@ mod tests {
         // FSM lifecycle commands (activate, submit_for_review, etc.)
         // should NOT trigger auto-bootstrap of the engagement.
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         let skip_cmds = [
@@ -1694,7 +1694,7 @@ mod tests {
     #[test]
     fn test_ia_judgment_dispatch() {
         let mut d = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Bootstrap engagement.
@@ -1720,7 +1720,7 @@ mod tests {
     #[test]
     fn test_ia_evidence_dispatch() {
         let mut d = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Bootstrap engagement.
@@ -1753,7 +1753,7 @@ mod tests {
     #[test]
     fn test_ia_planning_workpaper_dispatch() {
         let mut d = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Bootstrap engagement.
@@ -1786,7 +1786,7 @@ mod tests {
     #[test]
     fn test_findings_have_content_generator_narrative() {
         let mut d = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Bootstrap engagement + workpapers.
@@ -1829,7 +1829,7 @@ mod tests {
     #[test]
     fn test_findings_with_anomaly_refs() {
         let mut d = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_with_anomalies();
+        let ctx = EngagementContext::demo_with_anomalies();
         let mut bag = ArtifactBag::default();
 
         // Bootstrap.
@@ -1868,7 +1868,7 @@ mod tests {
     #[test]
     fn test_findings_with_je_evidence_refs() {
         let mut d = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Bootstrap.
@@ -1904,7 +1904,7 @@ mod tests {
     #[test]
     fn test_findings_linked_to_controls() {
         let mut d = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Bootstrap with engagement + risk assessments.
@@ -1949,7 +1949,7 @@ mod tests {
     #[test]
     fn test_workpaper_objectives_enriched() {
         let mut d = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         d.dispatch(
@@ -2003,7 +2003,7 @@ mod tests {
         }
 
         let mut d = StepDispatcher::new_with_content(42, Box::new(CustomGen));
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         d.dispatch(
@@ -2047,7 +2047,7 @@ mod tests {
         // Use a step_id that matches an entry in the FSA analytics inventory.
         // "risk_step_1" has 4 data requirements and 2 analytical procedures.
         let mut dispatcher = StepDispatcher::new(42);
-        let ctx = EngagementContext::test_default();
+        let ctx = EngagementContext::demo();
         let mut bag = ArtifactBag::default();
 
         // Create an engagement first.

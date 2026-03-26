@@ -16,7 +16,7 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
 fn ctx() -> EngagementContext {
-    EngagementContext::test_default()
+    EngagementContext::demo()
 }
 
 // =========================================================================
@@ -37,7 +37,7 @@ fn test_fit_overlay_then_generate_and_verify() {
         target_completion_rate: 1.0,
     };
 
-    let fitted = fit_overlay(&bwp, &profile, 10, 3, 42);
+    let fitted = fit_overlay(&bwp, &profile, 10, 3, 42, &EngagementContext::demo());
 
     // Generate with fitted overlay
     let mut engine = AuditFsmEngine::new(
@@ -146,6 +146,7 @@ fn test_calibrate_then_benchmark() {
             max_iterations: 10,
         },
         42,
+        &EngagementContext::demo(),
     )
     .unwrap();
 
@@ -236,7 +237,7 @@ fn test_full_wave4_pipeline() {
         target_anomaly_rate: 0.05,
         target_completion_rate: 1.0,
     };
-    let fitted = fit_overlay(&bwp, &profile, 8, 3, 42);
+    let fitted = fit_overlay(&bwp, &profile, 8, 3, 42, &EngagementContext::demo());
 
     // Step 2: Generate with fitted overlay
     let mut engine = AuditFsmEngine::new(

@@ -12,6 +12,9 @@ use crate::content::{
 };
 use std::process::Command;
 
+/// Default Claude model for content generation.
+pub const DEFAULT_CLAUDE_MODEL: &str = "claude-sonnet-4-20250514";
+
 /// Content generator that calls the Claude CLI for high-quality narratives.
 pub struct ClaudeContentGenerator {
     /// Model identifier passed to `claude --model`.
@@ -21,10 +24,10 @@ pub struct ClaudeContentGenerator {
 }
 
 impl ClaudeContentGenerator {
-    /// Create a new adapter with the default model (`claude-sonnet-4-20250514`).
+    /// Create a new adapter with the default model ([`DEFAULT_CLAUDE_MODEL`]).
     pub fn new() -> Self {
         Self {
-            model: "claude-sonnet-4-20250514".to_string(),
+            model: DEFAULT_CLAUDE_MODEL.to_string(),
             max_tokens: 500,
         }
     }
@@ -158,7 +161,7 @@ mod tests {
     #[test]
     fn test_claude_generator_construction() {
         let gen = ClaudeContentGenerator::new();
-        assert_eq!(gen.model, "claude-sonnet-4-20250514");
+        assert_eq!(gen.model, DEFAULT_CLAUDE_MODEL);
         assert_eq!(gen.max_tokens, 500);
     }
 
@@ -171,7 +174,7 @@ mod tests {
     #[test]
     fn test_claude_generator_default() {
         let gen = ClaudeContentGenerator::default();
-        assert_eq!(gen.model, "claude-sonnet-4-20250514");
+        assert_eq!(gen.model, DEFAULT_CLAUDE_MODEL);
     }
 
     #[test]

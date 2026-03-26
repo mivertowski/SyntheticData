@@ -69,6 +69,7 @@ pub fn calibrate_anomaly_rates(
     bwp: &BlueprintWithPreconditions,
     target: &CalibrationTarget,
     base_seed: u64,
+    context: &EngagementContext,
 ) -> Result<CalibratedOverlay, AuditFsmError> {
     const SAMPLES_PER_ITER: usize = 3;
     const PROB_MIN: f64 = 0.001;
@@ -98,7 +99,14 @@ pub fn calibrate_anomaly_rates(
     let mut best_distance = f64::MAX;
 
     for iter in 0..target.max_iterations {
-        let achieved = mean_anomaly_rate(bwp, &overlay, SAMPLES_PER_ITER, base_seed, iter as u64);
+        let achieved = mean_anomaly_rate(
+            bwp,
+            &overlay,
+            SAMPLES_PER_ITER,
+            base_seed,
+            iter as u64,
+            context,
+        );
 
         let distance = (achieved - target.target_anomaly_rate).abs();
         if distance < best_distance {
@@ -146,8 +154,8 @@ fn mean_anomaly_rate(
     samples: usize,
     base_seed: u64,
     seed_offset: u64,
+    context: &EngagementContext,
 ) -> f64 {
-    let ctx = EngagementContext::test_default();
     let mut total_anomaly_rate = 0.0;
     let mut successful = 0usize;
 
@@ -156,7 +164,7 @@ fn mean_anomaly_rate(
         let rng = ChaCha8Rng::seed_from_u64(iter_seed);
         let mut engine = AuditFsmEngine::new(bwp.clone(), overlay.clone(), rng);
 
-        let result = match engine.run_engagement(&ctx) {
+        let result = match engine.run_engagement(context) {
             Ok(r) => r,
             Err(_) => continue,
         };
@@ -210,7 +218,8 @@ mod tests {
             tolerance: 0.05,
             max_iterations: 10,
         };
-        let result = calibrate_anomaly_rates(&bwp, &target, 42).unwrap();
+        let result =
+            calibrate_anomaly_rates(&bwp, &target, 42, &EngagementContext::demo()).unwrap();
         let diff = (result.achieved_rate - 0.15).abs();
         assert!(
             diff <= 0.15,
@@ -229,7 +238,7 @@ mod tests {
             tolerance: 0.001,
             max_iterations: 10,
         };
-        let result = calibrate_anomaly_rates(&bwp, &target, 7).unwrap();
+        let result = calibrate_anomaly_rates(&bwp, &target, 7, &EngagementContext::demo()).unwrap();
         assert!(
             result.converged,
             "should converge immediately for zero target"
@@ -249,7 +258,8 @@ mod tests {
             tolerance: 0.10,
             max_iterations: 10,
         };
-        let result = calibrate_anomaly_rates(&bwp, &target, 99).unwrap();
+        let result =
+            calibrate_anomaly_rates(&bwp, &target, 99, &EngagementContext::demo()).unwrap();
         assert!(
             result.converged,
             "expected convergence with loose tolerance 0.10, achieved_rate={}",
@@ -266,7 +276,7 @@ mod tests {
             tolerance: 0.10,
             max_iterations: 3,
         };
-        let result = calibrate_anomaly_rates(&bwp, &target, 1).unwrap();
+        let result = calibrate_anomaly_rates(&bwp, &target, 1, &EngagementContext::demo()).unwrap();
         let json = serde_json::to_string(&result).expect("CalibratedOverlay must serialize");
         assert!(!json.is_empty());
         assert!(json.contains("achieved_rate"));
