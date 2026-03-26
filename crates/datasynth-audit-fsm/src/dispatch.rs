@@ -410,6 +410,78 @@ impl StepDispatcher {
                 );
             }
 
+            // ----- GAM command prefix dispatch -----
+            // For commands not explicitly mapped (common in the 1,182-procedure GAM blueprint),
+            // parse the command prefix to determine the generator category.
+            _ if cmd.starts_with("provide_")
+                || cmd.starts_with("document_")
+                || cmd.starts_with("prepare_") =>
+            {
+                self.dispatch_workpaper(step, procedure_id, context, bag);
+            }
+            _ if cmd.starts_with("evaluate_")
+                || cmd.starts_with("assess_")
+                || cmd.starts_with("consider_") =>
+            {
+                self.dispatch_judgment(context, bag);
+            }
+            _ if cmd.starts_with("determine_")
+                || cmd.starts_with("calculate_")
+                || cmd.starts_with("compute_") =>
+            {
+                self.dispatch_materiality(context, bag);
+            }
+            _ if cmd.starts_with("perform_")
+                || cmd.starts_with("test_")
+                || cmd.starts_with("execute_") =>
+            {
+                self.dispatch_sampling(context, bag);
+            }
+            _ if cmd.starts_with("obtain_")
+                || cmd.starts_with("confirm_")
+                || cmd.starts_with("request_")
+                || cmd.starts_with("send_") =>
+            {
+                self.dispatch_evidence(context, bag);
+            }
+            _ if cmd.starts_with("identify_")
+                || cmd.starts_with("detect_")
+                || cmd.starts_with("find_") =>
+            {
+                self.dispatch_risk_assessment(context, bag);
+            }
+            _ if cmd.starts_with("review_")
+                || cmd.starts_with("inspect_")
+                || cmd.starts_with("examine_")
+                || cmd.starts_with("check_") =>
+            {
+                self.dispatch_judgment(context, bag);
+            }
+            _ if cmd.starts_with("report_")
+                || cmd.starts_with("communicate_")
+                || cmd.starts_with("present_")
+                || cmd.starts_with("summarize_")
+                || cmd.starts_with("conclude_") =>
+            {
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Reporting,
+                );
+            }
+            _ if cmd.starts_with("approve_")
+                || cmd.starts_with("sign_")
+                || cmd.starts_with("authorize_") =>
+            {
+                self.dispatch_judgment(context, bag);
+            }
+            _ if cmd.starts_with("also_") => {
+                // GAM "also" commands are continuation steps — produce workpaper
+                self.dispatch_workpaper(step, procedure_id, context, bag);
+            }
+
             // ----- Everything else: generic workpaper fallback -----
             _ => {
                 self.dispatch_generic_workpaper(step, procedure_id, context, bag);
