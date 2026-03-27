@@ -4,9 +4,11 @@ methodology:
   name: PwC Aura ISA-Complete Financial Statement Audit
   version: '2025.1'
   framework: ISA
-  description: ISA-complete financial statement audit methodology styled after PwC Aura workflow with Halo analytics suite.
-    Based on public ISA standards and publicly known tool names, not proprietary PwC content. 37 ISA procedures plus firm-specific
-    FRISK assessment, Halo analytics, and multi-level quality review procedures.
+  description: ISA-complete financial statement audit methodology styled after PwC Aura workflow with Halo analytics suite,
+    GL.ai anomaly detection, Cash.ai bank reconciliation, Evidence Match, ChatNational research, Extract data ingestion,
+    Halo for Cryptocurrency assurance, and Advanced Walkthrough Assistant. Based on public ISA standards and publicly known
+    tool names, not proprietary PwC content. 37 ISA procedures plus firm-specific FRISK assessment, Halo analytics,
+    and multi-level quality review procedures.
 discriminators:
   tiers:
   - core
@@ -445,6 +447,55 @@ evidence_catalog:
   - draft
   - under_review
   - finalized
+- id: gl_ai_analytics_workpaper
+  name: GL.ai Anomaly Detection Workpaper
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: cash_ai_reconciliation_workpaper
+  name: Cash.ai Bank Reconciliation Workpaper
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: evidence_match_workpaper
+  name: Evidence Match Testing Workpaper
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: chatnational_research_memo
+  name: ChatNational Research Memo
+  type: memo
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: extract_data_workpaper
+  name: Extract Data Ingestion Workpaper
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: halo_crypto_assurance_workpaper
+  name: Halo Cryptocurrency Assurance Workpaper
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: walkthrough_assistant_workpaper
+  name: Advanced Walkthrough Assistant Workpaper
+  type: workpaper
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
 phases:
 - id: engagement_acceptance
   name: Engagement Acceptance
@@ -480,6 +531,10 @@ phases:
       state: completed
     - procedure: proc_isa_320
       state: completed
+    - procedure: chatnational_research
+      state: completed
+    - procedure: extract_data_ingestion
+      state: completed
 - id: risk_response
   name: Audit Strategy Design
   order: 3
@@ -490,6 +545,8 @@ phases:
     - procedure: proc_isa_402
       state: completed
     - procedure: proc_isa_450
+      state: completed
+    - procedure: advanced_walkthrough_assistant
       state: completed
 - id: evidence_gathering
   name: Execution & Evidence Gathering
@@ -525,6 +582,14 @@ phases:
     - procedure: halo_three_way_match_analytics
       state: completed
     - procedure: halo_outlier_visualization
+      state: completed
+    - procedure: gl_ai_anomaly_detection
+      state: completed
+    - procedure: cash_ai_bank_reconciliation
+      state: completed
+    - procedure: evidence_match_automated_testing
+      state: completed
+    - procedure: halo_cryptocurrency_assurance
       state: completed
 - id: group_audits
   name: Group & Component Audits
@@ -17565,9 +17630,186 @@ procedures:
         type: workpaper
   preconditions:
   - proc_isa_805
+- id: chatnational_research
+  phase: planning
+  title: ChatNational GenAI Accounting and Auditing Research
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_chatnational_research
+      emits: ChatnationalResearchStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_chatnational_research
+      emits: ChatnationalResearchSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_chatnational_research
+      emits: ChatnationalResearchRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_chatnational_research
+      emits: ChatnationalResearchApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_chatnational_research_1
+    order: 1
+    action: research
+    actor: senior_associate
+    description: Query ChatNational (Azure OpenAI GPT-4 with PwC Viewpoint RAG) for accounting and auditing guidance on engagement-specific technical issues
+    binding: guidance
+    command: research_chatnational_research_step_1
+    emits: ChatnationalResearchStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - standards_rag
+    - viewpoint_search
+    human_responsibilities:
+    - Frame research questions with professional context
+    - Evaluate relevance of retrieved guidance
+    standards: []
+  - id: step_chatnational_research_2
+    order: 2
+    action: prepare
+    actor: senior_associate
+    description: Generate research memos for complex accounting positions using ChatNational structured output with citations to authoritative literature
+    binding: guidance
+    command: prepare_chatnational_research_step_2
+    emits: ChatnationalResearchStep2Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - memo_generation
+    human_responsibilities:
+    - Validate citations and technical accuracy
+    - Ensure completeness of analysis
+    standards: []
+  - id: step_chatnational_research_3
+    order: 3
+    action: evaluate
+    actor: engagement_manager
+    description: Review and validate AI-generated guidance against professional judgment, confirming conclusions are appropriate for the engagement context
+    binding: guidance
+    command: evaluate_chatnational_research_step_3
+    emits: ChatnationalResearchStep3Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Validate technical accuracy of AI-generated research
+    - Document rationale for conclusions reached
+    standards: []
+  preconditions:
+  - proc_isa_300
+- id: extract_data_ingestion
+  phase: planning
+  title: Extract Secure Multi-System Data Acquisition
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_extract_data_ingestion
+      emits: ExtractDataIngestionStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_extract_data_ingestion
+      emits: ExtractDataIngestionSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_extract_data_ingestion
+      emits: ExtractDataIngestionRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_extract_data_ingestion
+      emits: ExtractDataIngestionApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_extract_data_ingestion_1
+    order: 1
+    action: configure
+    actor: senior_associate
+    description: Configure PwC Extract data extraction parameters including source ERP system connectors, field mappings, and extraction scope aligned to audit objectives
+    binding: guidance
+    command: configure_extract_data_ingestion_step_1
+    emits: ExtractDataIngestionStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Configuration template population
+    human_responsibilities:
+    - Approve extraction scope and parameters
+    - Validate field mappings against audit requirements
+    standards: []
+  - id: step_extract_data_ingestion_2
+    order: 2
+    action: extract
+    actor: data_analyst
+    description: Execute secure encrypted data extraction and transfer from client systems via PwC Extract with end-to-end encryption and chain-of-custody logging
+    binding: guidance
+    command: extract_extract_data_ingestion_step_2
+    emits: ExtractDataIngestionStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - data_extraction
+    - encryption
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_extract_data_ingestion_3
+    order: 3
+    action: validate
+    actor: data_analyst
+    description: Validate extracted data completeness against client trial balance totals, record counts, and hash verification to confirm data integrity
+    binding: guidance
+    command: validate_extract_data_ingestion_step_3
+    emits: ExtractDataIngestionStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - completeness_validation
+    human_responsibilities:
+    - Review reconciliation results
+    - Investigate discrepancies
+    standards: []
+  - id: step_extract_data_ingestion_4
+    order: 4
+    action: confirm
+    actor: engagement_manager
+    description: Confirm data integrity and readiness for Halo analytics platform, documenting data lineage and any transformation steps applied
+    binding: guidance
+    command: confirm_extract_data_ingestion_step_4
+    emits: ExtractDataIngestionStep4Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  preconditions:
+  - proc_isa_300
 - id: frisk_acceptance_assessment
   phase: engagement_acceptance
-  title: FRISK Pre-Engagement Risk Assessment
+  title: FRISK Pre-Engagement Risk Assessment — Risk-based client acceptance assessment aligned with ISA 220/ISQM 1 requirements (FRISK is not a publicly confirmed PwC tool name)
   aggregate:
     initial_state: not_started
     states:
@@ -17741,7 +17983,7 @@ procedures:
     order: 2
     action: analyze
     actor: senior_associate
-    description: Run Halo pattern detection algorithms including unusual posting times, amounts, and user behavior
+    description: Run Halo pattern detection algorithms including unusual posting times, amounts, and user behavior using 1,500+ built-in algorithms
     binding: guidance
     command: analyze_halo_journal_pattern_analysis_step_2
     emits: HaloJournalPatternAnalysisStep2Completed
@@ -17754,12 +17996,54 @@ procedures:
     standards: []
   - id: step_halo_journal_pattern_analysis_3
     order: 3
+    action: analyze
+    actor: data_analyst
+    description: Execute 40+ content-themed visualization dashboards covering account distributions, user activity profiles, posting frequency heatmaps, and amount stratification
+    binding: guidance
+    command: analyze_halo_journal_pattern_analysis_step_3
+    emits: HaloJournalPatternAnalysisStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - dashboard_generation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_journal_pattern_analysis_4
+    order: 4
+    action: analyze
+    actor: data_analyst
+    description: Perform multi-dimensional pattern recognition across account codes, users, posting months, amounts, and journal types to identify systematic anomalies
+    binding: guidance
+    command: analyze_halo_journal_pattern_analysis_step_4
+    emits: HaloJournalPatternAnalysisStep4Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - pattern_recognition
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_journal_pattern_analysis_5
+    order: 5
+    action: analyze
+    actor: data_analyst
+    description: Execute temporal anomaly detection including after-hours postings, holiday entries, weekend activity, and unusual user posting patterns
+    binding: guidance
+    command: analyze_halo_journal_pattern_analysis_step_5
+    emits: HaloJournalPatternAnalysisStep5Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - temporal_analysis
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_journal_pattern_analysis_6
+    order: 6
     action: evaluate
     actor: engagement_leader
-    description: Evaluate flagged journal entries for fraud risk indicators per ISA 240
+    description: Drill-down investigation of flagged transactions with full audit trail review and corroboration of anomalies identified by dashboard and pattern analysis
     binding: guidance
-    command: evaluate_halo_journal_pattern_analysis_step_3
-    emits: HaloJournalPatternAnalysisStep3Completed
+    command: evaluate_halo_journal_pattern_analysis_step_6
+    emits: HaloJournalPatternAnalysisStep6Completed
     judgment_level: human_required
     ai_capabilities:
     - Preliminary analysis and trend identification
@@ -17767,14 +18051,29 @@ procedures:
     - Make all substantive professional judgments
     - Evaluate sufficiency and appropriateness of evidence
     standards: []
-  - id: step_halo_journal_pattern_analysis_4
-    order: 4
+  - id: step_halo_journal_pattern_analysis_7
+    order: 7
+    action: evaluate
+    actor: engagement_leader
+    description: Evaluate flagged journal entries for fraud risk indicators per ISA 240
+    binding: guidance
+    command: evaluate_halo_journal_pattern_analysis_step_7
+    emits: HaloJournalPatternAnalysisStep7Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    standards: []
+  - id: step_halo_journal_pattern_analysis_8
+    order: 8
     action: document
     actor: engagement_manager
     description: Document journal entry testing results and conclusions in analytics workpaper
     binding: guidance
-    command: document_halo_journal_pattern_analysis_step_4
-    emits: HaloJournalPatternAnalysisStep4Completed
+    command: document_halo_journal_pattern_analysis_step_8
+    emits: HaloJournalPatternAnalysisStep8Completed
     judgment_level: ai_assistable
     ai_capabilities:
     - Draft preparation and template population
@@ -18036,6 +18335,526 @@ procedures:
     standards: []
   preconditions:
   - halo_three_way_match_analytics
+- id: gl_ai_anomaly_detection
+  phase: evidence_gathering
+  title: GL.ai AI/ML Anomaly Detection (DBSCAN Clustering)
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_gl_ai_anomaly_detection
+      emits: GlAiAnomalyDetectionStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_gl_ai_anomaly_detection
+      emits: GlAiAnomalyDetectionSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_gl_ai_anomaly_detection
+      emits: GlAiAnomalyDetectionRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_gl_ai_anomaly_detection
+      emits: GlAiAnomalyDetectionApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_gl_ai_anomaly_detection_1
+    order: 1
+    action: configure
+    actor: data_analyst
+    description: Configure GL.ai parameters including DBSCAN epsilon and min-samples thresholds, feature selection, and load full general ledger population for analysis
+    binding: guidance
+    command: configure_gl_ai_anomaly_detection_step_1
+    emits: GlAiAnomalyDetectionStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - data_ingestion
+    human_responsibilities:
+    - Approve configuration parameters
+    - Validate data completeness
+    standards: []
+  - id: step_gl_ai_anomaly_detection_2
+    order: 2
+    action: analyze
+    actor: data_analyst
+    description: Execute DBSCAN clustering algorithm (developed with H2O.ai) across all journal entries to identify density-based anomaly clusters in multi-dimensional feature space
+    binding: guidance
+    command: analyze_gl_ai_anomaly_detection_step_2
+    emits: GlAiAnomalyDetectionStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - dbscan_clustering
+    - anomaly_detection
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_gl_ai_anomaly_detection_3
+    order: 3
+    action: analyze
+    actor: data_analyst
+    description: Perform multi-factor anomaly scoring combining temporal patterns, user-based behavior profiles, calendar proximity indicators, and composite risk scores
+    binding: guidance
+    command: analyze_gl_ai_anomaly_detection_step_3
+    emits: GlAiAnomalyDetectionStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - multi_factor_scoring
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_gl_ai_anomaly_detection_4
+    order: 4
+    action: evaluate
+    actor: engagement_leader
+    description: Investigate high-risk anomaly clusters identified by GL.ai, corroborating machine learning outputs with business context and professional judgment
+    binding: guidance
+    command: evaluate_gl_ai_anomaly_detection_step_4
+    emits: GlAiAnomalyDetectionStep4Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    - Corroborate AI outputs with business understanding
+    standards: []
+  - id: step_gl_ai_anomaly_detection_5
+    order: 5
+    action: document
+    actor: engagement_manager
+    description: Document GL.ai findings including cluster characteristics, anomaly scores, investigation results, and determine appropriate audit response for identified risks
+    binding: guidance
+    command: document_gl_ai_anomaly_detection_step_5
+    emits: GlAiAnomalyDetectionStep5Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    - Determine additional audit procedures if warranted
+    standards: []
+  preconditions:
+  - proc_isa_500
+- id: cash_ai_bank_reconciliation
+  phase: evidence_gathering
+  title: Cash.ai BERT NLP Bank Statement Reconciliation
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_cash_ai_bank_reconciliation
+      emits: CashAiBankReconciliationStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_cash_ai_bank_reconciliation
+      emits: CashAiBankReconciliationSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_cash_ai_bank_reconciliation
+      emits: CashAiBankReconciliationRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_cash_ai_bank_reconciliation
+      emits: CashAiBankReconciliationApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_cash_ai_bank_reconciliation_1
+    order: 1
+    action: extract
+    actor: data_analyst
+    description: Ingest bank statements, client reconciliations, and bank confirmation letters into Cash.ai platform for automated processing
+    binding: guidance
+    command: extract_cash_ai_bank_reconciliation_step_1
+    emits: CashAiBankReconciliationStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - document_ingestion
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_cash_ai_bank_reconciliation_2
+    order: 2
+    action: analyze
+    actor: data_analyst
+    description: Execute BERT-based NLP parsing of bank documents achieving 98% accuracy in extracting structured data from unstructured bank statements and confirmation letters
+    binding: guidance
+    command: analyze_cash_ai_bank_reconciliation_step_2
+    emits: CashAiBankReconciliationStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - bert_nlp
+    - document_parsing
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_cash_ai_bank_reconciliation_3
+    order: 3
+    action: test
+    actor: data_analyst
+    description: Perform automated bank reconciliation testing comparing parsed bank data against client records to identify variances, timing differences, and unreconciled items
+    binding: guidance
+    command: test_cash_ai_bank_reconciliation_step_3
+    emits: CashAiBankReconciliationStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - reconciliation_testing
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_cash_ai_bank_reconciliation_4
+    order: 4
+    action: verify
+    actor: senior_associate
+    description: Verify foreign exchange position accuracy and assess bank financial condition using Cash.ai integrated market data and counterparty risk indicators
+    binding: guidance
+    command: verify_cash_ai_bank_reconciliation_step_4
+    emits: CashAiBankReconciliationStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - fx_analysis
+    human_responsibilities:
+    - Validate FX translation methodology
+    - Assess counterparty risk indicators
+    standards: []
+  - id: step_cash_ai_bank_reconciliation_5
+    order: 5
+    action: evaluate
+    actor: engagement_leader
+    description: Review Cash.ai exceptions, evaluate unreconciled items, and conclude on the completeness, existence, and valuation of cash and bank balances
+    binding: guidance
+    command: evaluate_cash_ai_bank_reconciliation_step_5
+    emits: CashAiBankReconciliationStep5Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    - Document rationale for conclusions reached
+    standards: []
+  preconditions:
+  - proc_isa_505
+- id: evidence_match_automated_testing
+  phase: evidence_gathering
+  title: Evidence Match Agent-Led AR/AP/Cash Evidence Matching
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_evidence_match_automated_testing
+      emits: EvidenceMatchAutomatedTestingStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_evidence_match_automated_testing
+      emits: EvidenceMatchAutomatedTestingSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_evidence_match_automated_testing
+      emits: EvidenceMatchAutomatedTestingRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_evidence_match_automated_testing
+      emits: EvidenceMatchAutomatedTestingApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_evidence_match_automated_testing_1
+    order: 1
+    action: configure
+    actor: senior_associate
+    description: Configure Evidence Match parameters for engagement including document type mappings, matching tolerance thresholds, and evidence sufficiency criteria for AR, AP, and cash balances
+    binding: guidance
+    command: configure_evidence_match_automated_testing_step_1
+    emits: EvidenceMatchAutomatedTestingStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Configuration template population
+    human_responsibilities:
+    - Approve matching parameters and thresholds
+    - Define evidence sufficiency criteria
+    standards: []
+  - id: step_evidence_match_automated_testing_2
+    order: 2
+    action: analyze
+    actor: data_analyst
+    description: Execute automated extraction and matching of audit evidence to source documents using agent-led document matching across invoices, receipts, confirmations, and bank records
+    binding: guidance
+    command: analyze_evidence_match_automated_testing_step_2
+    emits: EvidenceMatchAutomatedTestingStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - document_matching
+    - evidence_extraction
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_evidence_match_automated_testing_3
+    order: 3
+    action: validate
+    actor: data_analyst
+    description: Validate matched evidence trail completeness and organize documentation with cross-references, ensuring each tested item has sufficient appropriate audit evidence
+    binding: guidance
+    command: validate_evidence_match_automated_testing_step_3
+    emits: EvidenceMatchAutomatedTestingStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - evidence_validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_evidence_match_automated_testing_4
+    order: 4
+    action: evaluate
+    actor: engagement_manager
+    description: Review unmatched items, assess whether gaps represent audit evidence deficiencies, and determine additional procedures required for items not automatically matched
+    binding: guidance
+    command: evaluate_evidence_match_automated_testing_step_4
+    emits: EvidenceMatchAutomatedTestingStep4Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Evaluate sufficiency and appropriateness of evidence
+    - Determine additional audit procedures if warranted
+    standards: []
+  preconditions:
+  - proc_isa_500
+- id: halo_cryptocurrency_assurance
+  phase: evidence_gathering
+  title: Halo for Cryptocurrency Blockchain Assurance
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_halo_cryptocurrency_assurance
+      emits: HaloCryptocurrencyAssuranceStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_halo_cryptocurrency_assurance
+      emits: HaloCryptocurrencyAssuranceSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_halo_cryptocurrency_assurance
+      emits: HaloCryptocurrencyAssuranceRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_halo_cryptocurrency_assurance
+      emits: HaloCryptocurrencyAssuranceApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_halo_cryptocurrency_assurance_1
+    order: 1
+    action: scope
+    actor: engagement_leader
+    description: Identify and scope digital asset holdings including Bitcoin, Ethereum, stablecoins, and other blockchain-based assets, determining custodial arrangements and wallet architectures
+    binding: guidance
+    command: scope_halo_cryptocurrency_assurance_step_1
+    emits: HaloCryptocurrencyAssuranceStep1Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Define scope of digital asset assurance procedures
+    - Assess competence requirements for blockchain assurance
+    standards: []
+  - id: step_halo_cryptocurrency_assurance_2
+    order: 2
+    action: verify
+    actor: data_analyst
+    description: Verify blockchain ownership through cryptographic proof of control, confirming on-chain balances against claimed holdings using Halo blockchain verification capabilities
+    binding: guidance
+    command: verify_halo_cryptocurrency_assurance_step_2
+    emits: HaloCryptocurrencyAssuranceStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - blockchain_verification
+    - cryptographic_validation
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_halo_cryptocurrency_assurance_3
+    order: 3
+    action: assess
+    actor: senior_associate
+    description: Assess digital asset valuation using aggregated market data from multiple exchanges, evaluating fair value measurement including liquidity discounts and principal market determination
+    binding: guidance
+    command: assess_halo_cryptocurrency_assurance_step_3
+    emits: HaloCryptocurrencyAssuranceStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - market_data_analysis
+    human_responsibilities:
+    - Validate fair value methodology
+    - Assess market data reliability
+    standards: []
+  - id: step_halo_cryptocurrency_assurance_4
+    order: 4
+    action: analyze
+    actor: data_analyst
+    description: Evaluate blockchain intelligence for suspicious transaction patterns, sanctioned address interactions, and mixing service usage through on-chain analytics
+    binding: guidance
+    command: analyze_halo_cryptocurrency_assurance_step_4
+    emits: HaloCryptocurrencyAssuranceStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - blockchain_intelligence
+    human_responsibilities:
+    - Evaluate flagged transactions
+    - Assess implications for fraud risk
+    standards: []
+  - id: step_halo_cryptocurrency_assurance_5
+    order: 5
+    action: document
+    actor: engagement_manager
+    description: Document digital asset assurance conclusions including ownership verification, valuation assessment, blockchain intelligence findings, and overall conclusions on digital asset balances
+    binding: guidance
+    command: document_halo_cryptocurrency_assurance_step_5
+    emits: HaloCryptocurrencyAssuranceStep5Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Document rationale for conclusions reached
+    standards: []
+  preconditions:
+  - proc_isa_500
+- id: advanced_walkthrough_assistant
+  phase: risk_response
+  title: Advanced Walkthrough Assistant Controls Automation
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_advanced_walkthrough_assistant
+      emits: AdvancedWalkthroughAssistantStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_advanced_walkthrough_assistant
+      emits: AdvancedWalkthroughAssistantSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_advanced_walkthrough_assistant
+      emits: AdvancedWalkthroughAssistantRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_advanced_walkthrough_assistant
+      emits: AdvancedWalkthroughAssistantApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_advanced_walkthrough_assistant_1
+    order: 1
+    action: extract
+    actor: data_analyst
+    description: Ingest prior year walkthrough documentation and current year control documentation into the Advanced Walkthrough Assistant platform
+    binding: guidance
+    command: extract_advanced_walkthrough_assistant_step_1
+    emits: AdvancedWalkthroughAssistantStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - document_ingestion
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_advanced_walkthrough_assistant_2
+    order: 2
+    action: prepare
+    actor: senior_associate
+    description: Generate tailored walkthrough work plans identifying changes from prior year including new controls, modified processes, and updated risk factors requiring focused attention
+    binding: guidance
+    command: prepare_advanced_walkthrough_assistant_step_2
+    emits: AdvancedWalkthroughAssistantStep2Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - walkthrough_planning
+    - change_detection
+    human_responsibilities:
+    - Validate identified changes
+    - Approve walkthrough scope and focus areas
+    standards: []
+  - id: step_advanced_walkthrough_assistant_3
+    order: 3
+    action: execute
+    actor: senior_associate
+    description: Execute guided walkthrough with client personnel, documenting controls, identified risks, and process narratives with AI-assisted real-time documentation
+    binding: guidance
+    command: execute_advanced_walkthrough_assistant_step_3
+    emits: AdvancedWalkthroughAssistantStep3Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Conduct walkthrough interviews and observations
+    - Evaluate design effectiveness of controls
+    standards: []
+  - id: step_advanced_walkthrough_assistant_4
+    order: 4
+    action: review
+    actor: engagement_manager
+    description: Review and finalize AI-assisted walkthrough documentation, ensuring completeness of control descriptions, risk linkages, and assessment conclusions
+    binding: guidance
+    command: review_advanced_walkthrough_assistant_step_4
+    emits: AdvancedWalkthroughAssistantStep4Completed
+    judgment_level: human_required
+    ai_capabilities: []
+    human_responsibilities:
+    - Make all substantive professional judgments
+    - Validate completeness and appropriateness
+    - Document rationale for conclusions reached
+    standards: []
+  preconditions:
+  - proc_isa_330
 - id: qrp_hot_review
   phase: reporting
   title: Quality Review Partner Hot Review
