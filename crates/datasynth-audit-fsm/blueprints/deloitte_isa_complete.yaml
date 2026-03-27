@@ -4,9 +4,10 @@ methodology:
   name: Deloitte Omnia ISA-Complete Financial Statement Audit
   version: '2025.1'
   framework: ISA
-  description: ISA-complete financial statement audit methodology styled after Deloitte Omnia platform with Spotlight analytics
-    and Argus document extraction. Based on public ISA standards and publicly known tool names, not proprietary Deloitte content.
-    37 ISA procedures plus firm-specific analytics, AI governance, and specialist procedures.
+  description: ISA-complete financial statement audit methodology styled after Deloitte Omnia platform with Spotlight analytics,
+    Argus NLP document extraction, Cortex CDM normalization, Signal risk monitoring, and Reveal network analysis.
+    Based on public ISA standards and publicly known tool names, not proprietary Deloitte content.
+    37 ISA procedures plus firm-specific analytics, AI governance, Trustworthy AI framework, and specialist procedures.
 discriminators:
   tiers:
   - core
@@ -457,6 +458,34 @@ evidence_catalog:
   - draft
   - under_review
   - finalized
+- id: cortex_cdm_mapping_report
+  name: Cortex CDM Mapping and Data Readiness Report
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: signal_risk_monitoring_report
+  name: Signal External Risk Monitoring Report
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: argus_contract_extraction_report
+  name: Argus Contract Term Extraction Report
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
+- id: reveal_network_analysis_report
+  name: Reveal Entity Network Analysis Report
+  type: analytics
+  lifecycle:
+  - draft
+  - under_review
+  - finalized
 phases:
 - id: engagement_acceptance
   name: Engagement Setup & Acceptance
@@ -495,6 +524,10 @@ phases:
     - procedure: argus_document_extraction
       state: completed
     - procedure: dartbot_research_consultation
+      state: completed
+    - procedure: cortex_cdm_mapping
+      state: completed
+    - procedure: signal_risk_monitoring
       state: completed
 - id: risk_response
   name: Response Design & Controls
@@ -541,6 +574,10 @@ phases:
     - procedure: spotlight_anonymous_benchmarking
       state: completed
     - procedure: iconfirm_confirmation_automation
+      state: completed
+    - procedure: argus_contract_extraction
+      state: completed
+    - procedure: reveal_network_analysis
       state: completed
 - id: group_audits
   name: Group Audit Coordination
@@ -17995,12 +18032,125 @@ procedures:
     standards: []
   - id: step_spotlight_full_population_je_analysis_3
     order: 3
+    action: analyze
+    actor: audit_senior
+    description: Analyze unusual posting times including entries outside business hours, weekends, and public holidays
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_3
+    emits: SpotlightFullPopulationJeAnalysisStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - temporal_analysis
+    human_responsibilities:
+    - Review flagged off-hours entries for legitimate business justification
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_4
+    order: 4
+    action: analyze
+    actor: audit_senior
+    description: Detect below-approval-threshold manipulation where entries are split to circumvent authorization limits
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_4
+    emits: SpotlightFullPopulationJeAnalysisStep4Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - threshold_analysis
+    human_responsibilities:
+    - Investigate flagged split-entry patterns
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_5
+    order: 5
+    action: analyze
+    actor: audit_senior
+    description: Detect backdated entries by analyzing divergence between posting date and document date
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_5
+    emits: SpotlightFullPopulationJeAnalysisStep5Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - date_analysis
+    human_responsibilities:
+    - Review backdated entries for period-end manipulation indicators
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_6
+    order: 6
+    action: analyze
+    actor: audit_senior
+    description: Analyze unusual account combinations by identifying rare or unexpected debit-credit pairs across the population
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_6
+    emits: SpotlightFullPopulationJeAnalysisStep6Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - combination_analysis
+    human_responsibilities:
+    - Evaluate business rationale for unusual account pairings
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_7
+    order: 7
+    action: analyze
+    actor: audit_senior
+    description: Profile user posting behavior including dormant user reactivation, segregation of duties violations, and anomalous activity patterns
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_7
+    emits: SpotlightFullPopulationJeAnalysisStep7Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - user_profiling
+    human_responsibilities:
+    - Investigate flagged user behavior anomalies with management
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_8
+    order: 8
+    action: analyze
+    actor: audit_senior
+    description: Detect one-sided journal entries with single-side balance sheet impact indicating potential misclassification or fraud
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_8
+    emits: SpotlightFullPopulationJeAnalysisStep8Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - balance_analysis
+    human_responsibilities:
+    - Assess one-sided entries for financial statement impact
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_9
+    order: 9
+    action: analyze
+    actor: audit_senior
+    description: Analyze intercompany journal entry patterns for unusual routing, timing, or amount anomalies across entities
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_9
+    emits: SpotlightFullPopulationJeAnalysisStep9Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - ic_analysis
+    human_responsibilities:
+    - Investigate intercompany anomalies with group audit team
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_10
+    order: 10
+    action: analyze
+    actor: audit_manager
+    description: Compute weighted multi-indicator composite risk scores and tier entries into high, medium, and low risk categories
+    binding: guidance
+    command: analyze_spotlight_full_population_je_analysis_step_10
+    emits: SpotlightFullPopulationJeAnalysisStep10Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - risk_aggregation
+    human_responsibilities:
+    - Review and validate risk score weighting methodology
+    - Approve tier classification thresholds
+    standards: []
+  - id: step_spotlight_full_population_je_analysis_11
+    order: 11
     action: evaluate
     actor: lead_audit_partner
     description: Evaluate Spotlight flagged entries for fraud risk indicators and management override
     binding: guidance
-    command: evaluate_spotlight_full_population_je_analysis_step_3
-    emits: SpotlightFullPopulationJeAnalysisStep3Completed
+    command: evaluate_spotlight_full_population_je_analysis_step_11
+    emits: SpotlightFullPopulationJeAnalysisStep11Completed
     judgment_level: human_required
     ai_capabilities:
     - Preliminary analysis and trend identification
@@ -18008,14 +18158,14 @@ procedures:
     - Make all substantive professional judgments
     - Evaluate sufficiency and appropriateness of evidence
     standards: []
-  - id: step_spotlight_full_population_je_analysis_4
-    order: 4
+  - id: step_spotlight_full_population_je_analysis_12
+    order: 12
     action: document
     actor: audit_manager
     description: Document journal entry testing conclusions and link to ISA 240 fraud assessment
     binding: guidance
-    command: document_spotlight_full_population_je_analysis_step_4
-    emits: SpotlightFullPopulationJeAnalysisStep4Completed
+    command: document_spotlight_full_population_je_analysis_step_12
+    emits: SpotlightFullPopulationJeAnalysisStep12Completed
     judgment_level: ai_assistable
     ai_capabilities:
     - Draft preparation and template population
@@ -18169,26 +18319,69 @@ procedures:
     standards: []
   - id: step_iconfirm_confirmation_automation_3
     order: 3
+    action: track
+    actor: audit_senior
+    description: Track granular response status lifecycle including sent, received, confirmed, exception, and non-response categories with automated escalation
+    binding: guidance
+    command: track_iconfirm_confirmation_automation_step_3
+    emits: IconfirmConfirmationAutomationStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - response_tracking
+    human_responsibilities:
+    - Review escalated non-response cases
+    standards: []
+  - id: step_iconfirm_confirmation_automation_4
+    order: 4
+    action: analyze
+    actor: audit_senior
+    description: Perform automated response-to-book-value matching and reconciliation with variance identification
+    binding: guidance
+    command: analyze_iconfirm_confirmation_automation_step_4
+    emits: IconfirmConfirmationAutomationStep4Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - value_matching
+    human_responsibilities:
+    - Investigate material reconciliation variances
+    standards: []
+  - id: step_iconfirm_confirmation_automation_5
+    order: 5
     action: analyze
     actor: audit_senior
     description: Reconcile confirmed amounts against book values and identify discrepancies
     binding: guidance
-    command: analyze_iconfirm_confirmation_automation_step_3
-    emits: IconfirmConfirmationAutomationStep3Completed
+    command: analyze_iconfirm_confirmation_automation_step_5
+    emits: IconfirmConfirmationAutomationStep5Completed
     judgment_level: data_only
     ai_capabilities:
     - Document comparison and reconciliation
     human_responsibilities:
     - Investigate flagged exceptions
     standards: []
-  - id: step_iconfirm_confirmation_automation_4
-    order: 4
+  - id: step_iconfirm_confirmation_automation_6
+    order: 6
+    action: evaluate
+    actor: audit_manager
+    description: Execute alternative audit procedures for non-responses including subsequent cash receipts testing and vouching
+    binding: guidance
+    command: evaluate_iconfirm_confirmation_automation_step_6
+    emits: IconfirmConfirmationAutomationStep6Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Design and execute appropriate alternative procedures
+    - Determine sufficiency of alternative evidence obtained
+    standards: []
+  - id: step_iconfirm_confirmation_automation_7
+    order: 7
     action: evaluate
     actor: lead_audit_partner
-    description: Evaluate confirmation exceptions and determine alternative procedures for non-responses
+    description: Evaluate confirmation exceptions and determine overall sufficiency of confirmation evidence
     binding: guidance
-    command: evaluate_iconfirm_confirmation_automation_step_4
-    emits: IconfirmConfirmationAutomationStep4Completed
+    command: evaluate_iconfirm_confirmation_automation_step_7
+    emits: IconfirmConfirmationAutomationStep7Completed
     judgment_level: human_required
     ai_capabilities:
     - Preliminary analysis and trend identification
@@ -18314,47 +18507,490 @@ procedures:
   steps:
   - id: step_trustworthy_ai_governance_gate_1
     order: 1
-    action: verify
+    action: evaluate
     actor: lead_audit_partner
-    description: Validate all AI-generated outputs used in the engagement against Trustworthy AI framework requirements
+    description: Assess fairness and impartiality of AI audit outputs including bias detection in sampling, risk scoring, and anomaly flagging
     binding: guidance
-    command: verify_trustworthy_ai_governance_gate_step_1
+    command: evaluate_trustworthy_ai_governance_gate_step_1
     emits: TrustworthyAiGovernanceGateStep1Completed
     judgment_level: human_required
     ai_capabilities:
     - Background research and benchmarking
     human_responsibilities:
-    - Make all substantive professional judgments
-    - Evaluate sufficiency and appropriateness of evidence
+    - Evaluate AI outputs for demographic or transactional bias
+    - Confirm impartial treatment across entity populations
     standards: []
   - id: step_trustworthy_ai_governance_gate_2
     order: 2
+    action: verify
+    actor: audit_manager
+    description: Validate robustness and reliability through model performance stress testing across edge cases and adversarial inputs
+    binding: guidance
+    command: verify_trustworthy_ai_governance_gate_step_2
+    emits: TrustworthyAiGovernanceGateStep2Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - model_validation
+    - stress_testing
+    human_responsibilities:
+    - Review stress test results and confirm acceptable model performance thresholds
+    standards: []
+  - id: step_trustworthy_ai_governance_gate_3
+    order: 3
+    action: verify
+    actor: lead_audit_partner
+    description: Verify privacy compliance including data protection controls and anonymization applied during AI processing of client data
+    binding: guidance
+    command: verify_trustworthy_ai_governance_gate_step_3
+    emits: TrustworthyAiGovernanceGateStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    human_responsibilities:
+    - Confirm data protection requirements are met
+    - Verify anonymization and pseudonymization controls
+    standards: []
+  - id: step_trustworthy_ai_governance_gate_4
+    order: 4
     action: evaluate
     actor: lead_audit_partner
-    description: Assess whether AI tool outputs were appropriately reviewed and that human judgment was applied to all conclusions
+    description: Confirm transparency and explainability of AI-generated audit evidence ensuring interpretability of conclusions
     binding: guidance
-    command: evaluate_trustworthy_ai_governance_gate_step_2
-    emits: TrustworthyAiGovernanceGateStep2Completed
+    command: evaluate_trustworthy_ai_governance_gate_step_4
+    emits: TrustworthyAiGovernanceGateStep4Completed
     judgment_level: human_required
     ai_capabilities:
     - Consistency checking across workpapers
     human_responsibilities:
-    - Make all substantive professional judgments
-    - Document rationale for conclusions reached
+    - Verify that AI reasoning is traceable and explainable
+    - Confirm audit trail adequacy for AI-assisted procedures
     standards: []
-  - id: step_trustworthy_ai_governance_gate_3
-    order: 3
+  - id: step_trustworthy_ai_governance_gate_5
+    order: 5
     action: document
-    actor: audit_manager
-    description: Document AI governance review conclusions and sign-off on responsible AI compliance
+    actor: lead_audit_partner
+    description: Document responsible AI usage including human oversight points, accountability trail, and escalation decisions throughout the engagement
     binding: guidance
-    command: document_trustworthy_ai_governance_gate_step_3
-    emits: TrustworthyAiGovernanceGateStep3Completed
-    judgment_level: ai_assistable
+    command: document_trustworthy_ai_governance_gate_step_5
+    emits: TrustworthyAiGovernanceGateStep5Completed
+    judgment_level: human_required
     ai_capabilities:
     - Draft preparation and template population
     human_responsibilities:
-    - Validate completeness and appropriateness
+    - Confirm all AI tool usage had appropriate human oversight
+    - Document accountability chain for AI-assisted judgments
     standards: []
   preconditions:
   - omnia_genai_documentation_review
+- id: cortex_cdm_mapping
+  phase: planning
+  title: Cortex Common Data Model Normalization and Mapping
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_cortex_cdm_mapping
+      emits: CortexCdmMappingStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_cortex_cdm_mapping
+      emits: CortexCdmMappingSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_cortex_cdm_mapping
+      emits: CortexCdmMappingRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_cortex_cdm_mapping
+      emits: CortexCdmMappingApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_cortex_cdm_mapping_1
+    order: 1
+    action: configure
+    actor: it_specialist
+    description: Configure Cortex connectors for client ERP systems including SAP, Oracle, Workday, and other source platforms from the 150+ supported systems
+    binding: guidance
+    command: configure_cortex_cdm_mapping_step_1
+    emits: CortexCdmMappingStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - erp_connector_config
+    human_responsibilities:
+    - Validate connector configuration against client system landscape
+    standards: []
+  - id: step_cortex_cdm_mapping_2
+    order: 2
+    action: extract
+    actor: audit_senior
+    description: Execute data extraction pipeline normalizing client data into the Cortex Common Data Model schema
+    binding: guidance
+    command: extract_cortex_cdm_mapping_step_2
+    emits: CortexCdmMappingStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - data_extraction
+    - schema_mapping
+    human_responsibilities:
+    - Monitor extraction progress and resolve mapping exceptions
+    standards: []
+  - id: step_cortex_cdm_mapping_3
+    order: 3
+    action: verify
+    actor: audit_senior
+    description: Validate CDM completeness by reconciling extracted data against client trial balance and source system totals
+    binding: guidance
+    command: verify_cortex_cdm_mapping_step_3
+    emits: CortexCdmMappingStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - completeness_validation
+    - reconciliation
+    human_responsibilities:
+    - Investigate and resolve reconciliation differences
+    standards: []
+  - id: step_cortex_cdm_mapping_4
+    order: 4
+    action: analyze
+    actor: audit_senior
+    description: Generate data reliability scores for each extracted dataset and flag data quality issues requiring remediation
+    binding: guidance
+    command: analyze_cortex_cdm_mapping_step_4
+    emits: CortexCdmMappingStep4Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - data_quality_scoring
+    human_responsibilities:
+    - Review quality scores and prioritize remediation actions
+    standards: []
+  - id: step_cortex_cdm_mapping_5
+    order: 5
+    action: evaluate
+    actor: audit_manager
+    description: Review data quality report and confirm data readiness for downstream Spotlight analytics and audit procedures
+    binding: guidance
+    command: evaluate_cortex_cdm_mapping_step_5
+    emits: CortexCdmMappingStep5Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make final determination on data readiness for audit use
+    - Document any data limitations affecting audit scope
+    standards: []
+  preconditions:
+  - cortex_data_ingestion
+- id: signal_risk_monitoring
+  phase: planning
+  title: Signal External Risk Data Aggregation and Industry Benchmarking
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_signal_risk_monitoring
+      emits: SignalRiskMonitoringStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_signal_risk_monitoring
+      emits: SignalRiskMonitoringSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_signal_risk_monitoring
+      emits: SignalRiskMonitoringRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_signal_risk_monitoring
+      emits: SignalRiskMonitoringApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_signal_risk_monitoring_1
+    order: 1
+    action: extract
+    actor: audit_senior
+    description: Aggregate external risk indicators from news feeds, regulatory filings, market data, and credit rating agencies via Signal platform
+    binding: guidance
+    command: extract_signal_risk_monitoring_step_1
+    emits: SignalRiskMonitoringStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - external_data_aggregation
+    - news_monitoring
+    human_responsibilities:
+    - Validate relevance of aggregated risk indicators to engagement
+    standards: []
+  - id: step_signal_risk_monitoring_2
+    order: 2
+    action: analyze
+    actor: audit_senior
+    description: Compare client risk profile against industry benchmarks and peer company indicators using Signal analytics
+    binding: guidance
+    command: analyze_signal_risk_monitoring_step_2
+    emits: SignalRiskMonitoringStep2Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - industry_benchmarking
+    - peer_comparison
+    human_responsibilities:
+    - Evaluate relevance and reliability of benchmark comparisons
+    standards: []
+  - id: step_signal_risk_monitoring_3
+    order: 3
+    action: analyze
+    actor: audit_manager
+    description: Identify emerging risks and early warning indicators from Signal monitoring that may affect audit risk assessment
+    binding: guidance
+    command: analyze_signal_risk_monitoring_step_3
+    emits: SignalRiskMonitoringStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - early_warning_detection
+    human_responsibilities:
+    - Assess materiality and relevance of identified emerging risks
+    standards: []
+  - id: step_signal_risk_monitoring_4
+    order: 4
+    action: evaluate
+    actor: lead_audit_partner
+    description: Incorporate Signal risk assessment findings into ISA 315 risk evaluation and update the overall audit risk profile
+    binding: guidance
+    command: evaluate_signal_risk_monitoring_step_4
+    emits: SignalRiskMonitoringStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments on risk assessment
+    - Document impact on planned audit approach
+    standards: []
+  preconditions:
+  - proc_isa_315
+- id: argus_contract_extraction
+  phase: evidence_gathering
+  title: Argus NLP-Powered Contract Classification and Term Extraction
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_argus_contract_extraction
+      emits: ArgusContractExtractionStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_argus_contract_extraction
+      emits: ArgusContractExtractionSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_argus_contract_extraction
+      emits: ArgusContractExtractionRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_argus_contract_extraction
+      emits: ArgusContractExtractionApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_argus_contract_extraction_1
+    order: 1
+    action: analyze
+    actor: audit_senior
+    description: Classify engagement documents using Argus ML models into contracts, invoices, lease agreements, and other document categories
+    binding: guidance
+    command: analyze_argus_contract_extraction_step_1
+    emits: ArgusContractExtractionStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - document_classification
+    - ml_models
+    human_responsibilities:
+    - Review classification accuracy for misclassified documents
+    standards: []
+  - id: step_argus_contract_extraction_2
+    order: 2
+    action: extract
+    actor: audit_senior
+    description: Extract ASC 842 and IFRS 16 lease terms including duration, payment schedules, renewal options, and purchase options using NLP
+    binding: guidance
+    command: extract_argus_contract_extraction_step_2
+    emits: ArgusContractExtractionStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - nlp_extraction
+    - lease_analysis
+    human_responsibilities:
+    - Validate extracted lease terms against source documents for high-value leases
+    standards: []
+  - id: step_argus_contract_extraction_3
+    order: 3
+    action: extract
+    actor: audit_senior
+    description: Extract ASC 606 and IFRS 15 revenue obligation terms including performance obligations, transaction prices, and allocation methodology
+    binding: guidance
+    command: extract_argus_contract_extraction_step_3
+    emits: ArgusContractExtractionStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - nlp_extraction
+    - revenue_analysis
+    human_responsibilities:
+    - Validate extracted revenue terms against source contracts for material arrangements
+    standards: []
+  - id: step_argus_contract_extraction_4
+    order: 4
+    action: analyze
+    actor: audit_manager
+    description: Flag unusual contract clauses with confidence scoring and highlight terms requiring professional judgment
+    binding: guidance
+    command: analyze_argus_contract_extraction_step_4
+    emits: ArgusContractExtractionStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - anomaly_flagging
+    - confidence_scoring
+    human_responsibilities:
+    - Evaluate flagged unusual clauses for accounting and disclosure implications
+    standards: []
+  - id: step_argus_contract_extraction_5
+    order: 5
+    action: evaluate
+    actor: lead_audit_partner
+    description: Review low-confidence extractions and unusual clause flags to determine audit implications and additional procedures required
+    binding: guidance
+    command: evaluate_argus_contract_extraction_step_5
+    emits: ArgusContractExtractionStep5Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments on contract terms
+    - Determine whether additional audit procedures are required for flagged items
+    standards: []
+  preconditions:
+  - argus_document_extraction
+  - proc_isa_500
+- id: reveal_network_analysis
+  phase: evidence_gathering
+  title: Reveal Entity Relationship Investigation for ISA 240 and ISA 550
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_reveal_network_analysis
+      emits: RevealNetworkAnalysisStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_reveal_network_analysis
+      emits: RevealNetworkAnalysisSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_reveal_network_analysis
+      emits: RevealNetworkAnalysisRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_reveal_network_analysis
+      emits: RevealNetworkAnalysisApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_reveal_network_analysis_1
+    order: 1
+    action: analyze
+    actor: audit_senior
+    description: Map entity relationships from financial and non-financial data sources using Reveal network construction and entity resolution
+    binding: guidance
+    command: analyze_reveal_network_analysis_step_1
+    emits: RevealNetworkAnalysisStep1Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - network_construction
+    - entity_resolution
+    human_responsibilities:
+    - Validate entity resolution accuracy for key counterparties
+    standards: []
+  - id: step_reveal_network_analysis_2
+    order: 2
+    action: analyze
+    actor: audit_senior
+    description: Identify unusual relationship patterns including circular transactions, hidden affiliations, and anomalous fund flows
+    binding: guidance
+    command: analyze_reveal_network_analysis_step_2
+    emits: RevealNetworkAnalysisStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - pattern_detection
+    - circular_flow_detection
+    human_responsibilities:
+    - Investigate flagged relationship anomalies with engagement team
+    standards: []
+  - id: step_reveal_network_analysis_3
+    order: 3
+    action: analyze
+    actor: audit_manager
+    description: Reconstruct timelines of related party transaction sequences to identify coordinated activity patterns
+    binding: guidance
+    command: analyze_reveal_network_analysis_step_3
+    emits: RevealNetworkAnalysisStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - timeline_analysis
+    human_responsibilities:
+    - Evaluate timeline patterns for indicators of management override or collusion
+    standards: []
+  - id: step_reveal_network_analysis_4
+    order: 4
+    action: evaluate
+    actor: lead_audit_partner
+    description: Evaluate related party disclosure completeness against ISA 550 requirements using Reveal network findings
+    binding: guidance
+    command: evaluate_reveal_network_analysis_step_4
+    emits: RevealNetworkAnalysisStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Make all substantive professional judgments on related party completeness
+    - Determine whether undisclosed relationships require management communication
+    standards: []
+  preconditions:
+  - proc_isa_550
+  - cortex_cdm_mapping
