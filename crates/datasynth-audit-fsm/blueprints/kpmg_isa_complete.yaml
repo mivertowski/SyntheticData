@@ -481,6 +481,10 @@ phases:
       state: completed
     - procedure: business_process_mining
       state: completed
+    - procedure: dynamic_risk_assessment_4d
+      state: completed
+    - procedure: audit_chat_genai_consultation
+      state: completed
 - id: risk_response
   name: Design Audit Responses
   order: 3
@@ -525,6 +529,10 @@ phases:
       state: completed
     - procedure: forensic_fraud_analytics
       state: completed
+    - procedure: ai_agent_expense_vouching
+      state: completed
+    - procedure: ai_agent_unrecorded_liabilities
+      state: completed
 - id: group_audits
   name: Group Audit Considerations
   order: 5
@@ -566,6 +574,10 @@ phases:
 - id: quality_review
   name: Engagement Quality Review
   order: 7
+  gate:
+    all_of:
+    - procedure: trusted_ai_governance_gate
+      state: completed
 procedures:
 - id: proc_isa_200
   phase: engagement_acceptance
@@ -17628,12 +17640,57 @@ procedures:
     standards: []
   - id: step_sentinel_independence_check_3
     order: 3
+    action: screen
+    actor: senior_associate
+    description: Execute cross-firm global conflict screening across KPMG member firms and network entities
+    binding: guidance
+    command: screen_sentinel_independence_check_step_3
+    emits: SentinelIndependenceCheckStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - Global conflict database search
+    - Cross-entity relationship mapping
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_sentinel_independence_check_4
+    order: 4
+    action: verify
+    actor: engagement_partner
+    description: Verify non-audit services pre-approval with the audit committee and assess permissibility under independence requirements
+    binding: guidance
+    command: verify_sentinel_independence_check_step_4
+    emits: SentinelIndependenceCheckStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Historical services lookup and fee aggregation
+    human_responsibilities:
+    - Assess permissibility of non-audit services
+    - Obtain audit committee pre-approval where required
+    standards: []
+  - id: step_sentinel_independence_check_5
+    order: 5
+    action: evaluate
+    actor: engagement_partner
+    description: Perform related party and affiliate independence extension review to confirm no threats from group relationships
+    binding: guidance
+    command: evaluate_sentinel_independence_check_step_5
+    emits: SentinelIndependenceCheckStep5Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    human_responsibilities:
+    - Evaluate independence threats from affiliate and related party relationships
+    - Document safeguards applied to mitigate identified threats
+    standards: []
+  - id: step_sentinel_independence_check_6
+    order: 6
     action: document
     actor: engagement_manager
-    description: Document independence conclusions and safeguards applied
+    description: Document independence conclusions and safeguards applied including global screening results and non-audit services assessment
     binding: guidance
-    command: document_sentinel_independence_check_step_3
-    emits: SentinelIndependenceCheckStep3Completed
+    command: document_sentinel_independence_check_step_6
+    emits: SentinelIndependenceCheckStep6Completed
     judgment_level: ai_assistable
     ai_capabilities:
     - Draft preparation and template population
@@ -17801,12 +17858,97 @@ procedures:
     standards: []
   - id: step_full_population_transaction_scoring_3
     order: 3
+    action: analyze
+    actor: senior_associate
+    description: Perform Benford's Law first-digit distribution analysis across full journal entry population to detect non-conforming entries
+    binding: guidance
+    command: analyze_full_population_transaction_scoring_step_3
+    emits: FullPopulationTransactionScoringStep3Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - benford_analysis
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_full_population_transaction_scoring_4
+    order: 4
+    action: analyze
+    actor: senior_associate
+    description: Detect rare vendor-account combinations that deviate from established posting patterns and historical baselines
+    binding: guidance
+    command: analyze_full_population_transaction_scoring_step_4
+    emits: FullPopulationTransactionScoringStep4Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - rare_combination_detection
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_full_population_transaction_scoring_5
+    order: 5
+    action: analyze
+    actor: senior_associate
+    description: Execute temporal anomaly detection to identify unusual volume shifts, after-hours posting patterns, and period-end clustering
+    binding: guidance
+    command: analyze_full_population_transaction_scoring_step_5
+    emits: FullPopulationTransactionScoringStep5Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - temporal_analysis
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_full_population_transaction_scoring_6
+    order: 6
+    action: analyze
+    actor: senior_associate
+    description: Perform digit pattern analysis to identify round-number bias, digit transpositions, and systematic rounding indicative of estimation or manipulation
+    binding: guidance
+    command: analyze_full_population_transaction_scoring_step_6
+    emits: FullPopulationTransactionScoringStep6Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - digit_analysis
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_full_population_transaction_scoring_7
+    order: 7
+    action: analyze
+    actor: senior_associate
+    description: Apply unsupervised clustering algorithms to detect statistical outliers and atypical transaction groupings across multiple dimensions
+    binding: guidance
+    command: analyze_full_population_transaction_scoring_step_7
+    emits: FullPopulationTransactionScoringStep7Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - clustering
+    - anomaly_detection
+    human_responsibilities:
+    - Review and approve automated results
+    standards: []
+  - id: step_full_population_transaction_scoring_8
+    order: 8
+    action: score
+    actor: senior_associate
+    description: Aggregate composite risk scores from rules-based, statistical, and ML components into a unified transaction risk ranking
+    binding: guidance
+    command: score_full_population_transaction_scoring_step_8
+    emits: FullPopulationTransactionScoringStep8Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - risk_aggregation
+    human_responsibilities:
+    - Review composite scoring methodology and weighting
+    standards: []
+  - id: step_full_population_transaction_scoring_9
+    order: 9
     action: evaluate
     actor: engagement_partner
     description: Review high-risk scored transactions and determine further procedures needed
     binding: guidance
-    command: evaluate_full_population_transaction_scoring_step_3
-    emits: FullPopulationTransactionScoringStep3Completed
+    command: evaluate_full_population_transaction_scoring_step_9
+    emits: FullPopulationTransactionScoringStep9Completed
     judgment_level: human_required
     ai_capabilities:
     - Preliminary analysis and trend identification
@@ -17814,14 +17956,14 @@ procedures:
     - Make all substantive professional judgments
     - Evaluate sufficiency and appropriateness of evidence
     standards: []
-  - id: step_full_population_transaction_scoring_4
-    order: 4
+  - id: step_full_population_transaction_scoring_10
+    order: 10
     action: document
     actor: engagement_manager
     description: Document transaction scoring results and link to audit response workpapers
     binding: guidance
-    command: document_full_population_transaction_scoring_step_4
-    emits: FullPopulationTransactionScoringStep4Completed
+    command: document_full_population_transaction_scoring_step_10
+    emits: FullPopulationTransactionScoringStep10Completed
     judgment_level: ai_assistable
     ai_capabilities:
     - Draft preparation and template population
@@ -18193,3 +18335,512 @@ procedures:
     standards: []
   preconditions:
   - eqcr_multi_point_review
+- id: dynamic_risk_assessment_4d
+  phase: planning
+  title: KPMG Dynamic Risk Assessment across Four Dimensions
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_dynamic_risk_assessment_4d
+      emits: DynamicRiskAssessment4dStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_dynamic_risk_assessment_4d
+      emits: DynamicRiskAssessment4dSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_dynamic_risk_assessment_4d
+      emits: DynamicRiskAssessment4dRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_dynamic_risk_assessment_4d
+      emits: DynamicRiskAssessment4dApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_dynamic_risk_assessment_4d_1
+    order: 1
+    action: assess
+    actor: engagement_partner
+    description: Identify engagement risks and perform traditional scoring using likelihood and impact dimensions per ISA 315 risk assessment framework
+    binding: guidance
+    command: assess_dynamic_risk_assessment_4d_step_1
+    emits: DynamicRiskAssessment4dStep1Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Background research and benchmarking
+    human_responsibilities:
+    - Identify and score all significant risks
+    - Apply professional judgment to likelihood and impact ratings
+    standards: []
+  - id: step_dynamic_risk_assessment_4d_2
+    order: 2
+    action: assess
+    actor: engagement_partner
+    description: Evaluate velocity dimension for each identified risk to determine how quickly it could materialize and affect financial statements
+    binding: guidance
+    command: assess_dynamic_risk_assessment_4d_step_2
+    emits: DynamicRiskAssessment4dStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Assess risk velocity based on entity-specific circumstances
+    - Determine time-to-impact for each risk factor
+    standards: []
+  - id: step_dynamic_risk_assessment_4d_3
+    order: 3
+    action: analyze
+    actor: senior_associate
+    description: Map risk interdependencies using graph theory to identify how risks connect and influence each other across business processes
+    binding: guidance
+    command: analyze_dynamic_risk_assessment_4d_step_3
+    emits: DynamicRiskAssessment4dStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - risk_graph_analysis
+    - contagion_modeling
+    human_responsibilities:
+    - Validate identified risk connections against engagement knowledge
+    standards: []
+  - id: step_dynamic_risk_assessment_4d_4
+    order: 4
+    action: analyze
+    actor: senior_associate
+    description: Perform cluster and contagion analysis to identify critical risk clusters that could trigger cascading failures across interconnected processes
+    binding: guidance
+    command: analyze_dynamic_risk_assessment_4d_step_4
+    emits: DynamicRiskAssessment4dStep4Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - cluster_detection
+    - network_analysis
+    human_responsibilities:
+    - Review and validate cluster boundaries and contagion paths
+    standards: []
+  - id: step_dynamic_risk_assessment_4d_5
+    order: 5
+    action: communicate
+    actor: engagement_partner
+    description: Produce 4D risk visualization and communicate integrated risk landscape to engagement team for audit strategy alignment
+    binding: guidance
+    command: communicate_dynamic_risk_assessment_4d_step_5
+    emits: DynamicRiskAssessment4dStep5Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Visualization generation and formatting
+    human_responsibilities:
+    - Interpret 4D risk results for audit strategy implications
+    - Communicate risk priorities to engagement team
+    standards: []
+  preconditions:
+  - business_process_mining
+- id: audit_chat_genai_consultation
+  phase: planning
+  title: KPMG Audit Chat GenAI Methodology Consultation
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_audit_chat_genai_consultation
+      emits: AuditChatGenaiConsultationStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_audit_chat_genai_consultation
+      emits: AuditChatGenaiConsultationSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_audit_chat_genai_consultation
+      emits: AuditChatGenaiConsultationRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_audit_chat_genai_consultation
+      emits: AuditChatGenaiConsultationApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_audit_chat_genai_consultation_1
+    order: 1
+    action: query
+    actor: senior_associate
+    description: Query KPMG audit methodology knowledge base for engagement-specific guidance on applicable standards and firm policies
+    binding: guidance
+    command: query_audit_chat_genai_consultation_step_1
+    emits: AuditChatGenaiConsultationStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - methodology_rag
+    - standards_search
+    human_responsibilities:
+    - Formulate appropriate methodology queries
+    - Evaluate relevance of retrieved guidance
+    standards: []
+  - id: step_audit_chat_genai_consultation_2
+    order: 2
+    action: analyze
+    actor: senior_associate
+    description: Perform gap analysis of existing audit documentation against applicable ISA requirements and firm methodology standards
+    binding: guidance
+    command: analyze_audit_chat_genai_consultation_step_2
+    emits: AuditChatGenaiConsultationStep2Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - gap_analysis
+    - compliance_checking
+    human_responsibilities:
+    - Validate identified gaps against engagement context
+    standards: []
+  - id: step_audit_chat_genai_consultation_3
+    order: 3
+    action: extract
+    actor: senior_associate
+    description: Extract and summarize relevant contract terms and key provisions using Document Analyzer for audit-relevant clause identification
+    binding: guidance
+    command: extract_audit_chat_genai_consultation_step_3
+    emits: AuditChatGenaiConsultationStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - contract_analysis
+    - nlp_extraction
+    human_responsibilities:
+    - Verify extracted terms against source documents
+    standards: []
+  - id: step_audit_chat_genai_consultation_4
+    order: 4
+    action: evaluate
+    actor: engagement_partner
+    description: Review and validate all AI-generated methodology guidance against professional judgment and engagement-specific circumstances
+    binding: guidance
+    command: evaluate_audit_chat_genai_consultation_step_4
+    emits: AuditChatGenaiConsultationStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Research and reference lookup
+    human_responsibilities:
+    - Make all substantive professional judgments on methodology application
+    - Document rationale for any deviation from standard guidance
+    standards: []
+  preconditions:
+  - proc_isa_315
+- id: ai_agent_expense_vouching
+  phase: evidence_gathering
+  title: KPMG Agentic AI Automated Expense Vouching
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_ai_agent_expense_vouching
+      emits: AiAgentExpenseVouchingStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_ai_agent_expense_vouching
+      emits: AiAgentExpenseVouchingSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_ai_agent_expense_vouching
+      emits: AiAgentExpenseVouchingRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_ai_agent_expense_vouching
+      emits: AiAgentExpenseVouchingApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_ai_agent_expense_vouching_1
+    order: 1
+    action: configure
+    actor: senior_associate
+    description: Configure expense vouching agent parameters including materiality thresholds, target accounts, testing period, and document source locations
+    binding: guidance
+    command: configure_ai_agent_expense_vouching_step_1
+    emits: AiAgentExpenseVouchingStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Parameter recommendation based on risk assessment
+    human_responsibilities:
+    - Approve agent configuration and scope parameters
+    standards: []
+  - id: step_ai_agent_expense_vouching_2
+    order: 2
+    action: execute
+    actor: senior_associate
+    description: Execute automated expense-to-documentation matching using OCR extraction, document classification, and three-way vouching against GL entries
+    binding: guidance
+    command: execute_ai_agent_expense_vouching_step_2
+    emits: AiAgentExpenseVouchingStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - document_matching
+    - ocr_extraction
+    human_responsibilities:
+    - Monitor agent execution progress
+    standards: []
+  - id: step_ai_agent_expense_vouching_3
+    order: 3
+    action: evaluate
+    actor: engagement_manager
+    description: Review agent-flagged exceptions, unmatched items, and low-confidence matches requiring human judgment
+    binding: guidance
+    command: evaluate_ai_agent_expense_vouching_step_3
+    emits: AiAgentExpenseVouchingStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Investigate all flagged exceptions
+    - Determine whether unmatched items represent misstatements
+    standards: []
+  - id: step_ai_agent_expense_vouching_4
+    order: 4
+    action: conclude
+    actor: engagement_partner
+    description: Conclude on expense completeness and accuracy based on vouching results and determine sufficiency of audit evidence obtained
+    binding: guidance
+    command: conclude_ai_agent_expense_vouching_step_4
+    emits: AiAgentExpenseVouchingStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Summary statistics and coverage reporting
+    human_responsibilities:
+    - Make all substantive professional judgments on evidence sufficiency
+    - Document conclusions on expense assertions tested
+    standards: []
+  preconditions:
+  - proc_isa_500
+- id: ai_agent_unrecorded_liabilities
+  phase: evidence_gathering
+  title: KPMG Agentic AI Unrecorded Liabilities Search
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_ai_agent_unrecorded_liabilities
+      emits: AiAgentUnrecordedLiabilitiesStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_ai_agent_unrecorded_liabilities
+      emits: AiAgentUnrecordedLiabilitiesSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_ai_agent_unrecorded_liabilities
+      emits: AiAgentUnrecordedLiabilitiesRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_ai_agent_unrecorded_liabilities
+      emits: AiAgentUnrecordedLiabilitiesApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_ai_agent_unrecorded_liabilities_1
+    order: 1
+    action: configure
+    actor: senior_associate
+    description: Configure unrecorded liabilities search parameters including period boundaries, account scope, vendor population, and completeness assertion thresholds
+    binding: guidance
+    command: configure_ai_agent_unrecorded_liabilities_step_1
+    emits: AiAgentUnrecordedLiabilitiesStep1Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - Parameter recommendation based on prior year findings
+    human_responsibilities:
+    - Approve search scope and configuration parameters
+    standards: []
+  - id: step_ai_agent_unrecorded_liabilities_2
+    order: 2
+    action: execute
+    actor: senior_associate
+    description: Execute automated completeness testing across accounts payable, accruals, and commitments to identify potential unrecorded obligations
+    binding: guidance
+    command: execute_ai_agent_unrecorded_liabilities_step_2
+    emits: AiAgentUnrecordedLiabilitiesStep2Completed
+    judgment_level: data_only
+    ai_capabilities:
+    - completeness_testing
+    - pattern_detection
+    human_responsibilities:
+    - Monitor agent execution progress
+    standards: []
+  - id: step_ai_agent_unrecorded_liabilities_3
+    order: 3
+    action: evaluate
+    actor: engagement_manager
+    description: Review agent-identified potential unrecorded liabilities including goods received not invoiced, subsequent disbursements, and contractual obligations
+    binding: guidance
+    command: evaluate_ai_agent_unrecorded_liabilities_step_3
+    emits: AiAgentUnrecordedLiabilitiesStep3Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Preliminary analysis and trend identification
+    human_responsibilities:
+    - Investigate all identified potential unrecorded liabilities
+    - Assess materiality of each identified item
+    standards: []
+  - id: step_ai_agent_unrecorded_liabilities_4
+    order: 4
+    action: conclude
+    actor: engagement_partner
+    description: Evaluate completeness of liabilities and determine whether additional procedures are needed for identified unrecorded items
+    binding: guidance
+    command: conclude_ai_agent_unrecorded_liabilities_step_4
+    emits: AiAgentUnrecordedLiabilitiesStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Summary statistics and coverage reporting
+    human_responsibilities:
+    - Make all substantive professional judgments on liability completeness
+    - Determine need for additional audit procedures
+    standards: []
+  preconditions:
+  - proc_isa_500
+- id: trusted_ai_governance_gate
+  phase: quality_review
+  title: KPMG Trusted AI Framework Governance Gate
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_trusted_ai_governance_gate
+      emits: TrustedAiGovernanceGateStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_trusted_ai_governance_gate
+      emits: TrustedAiGovernanceGateSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_trusted_ai_governance_gate
+      emits: TrustedAiGovernanceGateRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_trusted_ai_governance_gate
+      emits: TrustedAiGovernanceGateApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: step_trusted_ai_governance_gate_1
+    order: 1
+    action: assess
+    actor: engagement_partner
+    description: Assess all AI-generated audit outputs for fairness and bias including evaluation of whether AI tools produced equitable results across entity segments
+    binding: guidance
+    command: assess_trusted_ai_governance_gate_step_1
+    emits: TrustedAiGovernanceGateStep1Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Bias detection metrics computation
+    human_responsibilities:
+    - Evaluate fairness of AI outputs across all engagement areas
+    - Document any identified bias and remediation steps taken
+    standards: []
+  - id: step_trusted_ai_governance_gate_2
+    order: 2
+    action: verify
+    actor: engagement_partner
+    description: Verify transparency and explainability of AI-generated audit evidence ensuring all AI conclusions can be traced to underlying data and methodology
+    binding: guidance
+    command: verify_trusted_ai_governance_gate_step_2
+    emits: TrustedAiGovernanceGateStep2Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Explainability report generation
+    human_responsibilities:
+    - Confirm all AI-derived evidence has sufficient audit trail
+    - Verify that AI reasoning is interpretable and documentable
+    standards: []
+  - id: step_trusted_ai_governance_gate_3
+    order: 3
+    action: validate
+    actor: senior_associate
+    description: Validate data integrity and reliability of all inputs consumed by AI tools during the engagement including source data lineage and quality checks
+    binding: guidance
+    command: validate_trusted_ai_governance_gate_step_3
+    emits: TrustedAiGovernanceGateStep3Completed
+    judgment_level: ai_assistable
+    ai_capabilities:
+    - data_validation
+    human_responsibilities:
+    - Review data quality assessment results
+    - Confirm input data meets reliability thresholds
+    standards: []
+  - id: step_trusted_ai_governance_gate_4
+    order: 4
+    action: confirm
+    actor: engagement_partner
+    description: Confirm human accountability for all AI-assisted conclusions by verifying that professional judgment was applied at every decision point
+    binding: guidance
+    command: confirm_trusted_ai_governance_gate_step_4
+    emits: TrustedAiGovernanceGateStep4Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Accountability chain tracing
+    human_responsibilities:
+    - Verify human sign-off exists for every AI-assisted judgment
+    - Confirm no audit conclusions rely solely on AI outputs
+    standards: []
+  - id: step_trusted_ai_governance_gate_5
+    order: 5
+    action: document
+    actor: engagement_partner
+    description: Document AI governance assessment results including Trusted AI framework compliance and formal approval for engagement file
+    binding: guidance
+    command: document_trusted_ai_governance_gate_step_5
+    emits: TrustedAiGovernanceGateStep5Completed
+    judgment_level: human_required
+    ai_capabilities:
+    - Draft preparation and template population
+    human_responsibilities:
+    - Approve and sign AI governance assessment
+    - Document overall Trusted AI framework compliance conclusion
+    standards: []
+  preconditions:
+  - fra_disclosure_review
