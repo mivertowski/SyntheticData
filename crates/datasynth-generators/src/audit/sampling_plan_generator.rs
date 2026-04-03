@@ -24,7 +24,7 @@
 //! When no JE data is available, synthetic key items are generated based on
 //! a fraction of the population size.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use datasynth_core::models::audit::risk_assessment_cra::{
     AuditAssertion, CombinedRiskAssessment, CraLevel,
@@ -116,6 +116,16 @@ fn account_area_to_prefixes(account_area: &str) -> Vec<&'static str> {
         vec!["26"]
     } else if lower.contains("intangible") || lower.contains("goodwill") {
         vec!["19"]
+    } else if lower.contains("interest") {
+        vec!["71"]
+    } else if lower.contains("other income") || lower.contains("other expense") {
+        vec!["7"]
+    } else if lower.contains("depreciation") || lower.contains("amortization") {
+        vec!["60"]
+    } else if lower.contains("salary") || lower.contains("wages") || lower.contains("payroll") {
+        vec!["61"]
+    } else if lower.contains("rent") || lower.contains("lease") {
+        vec!["63"]
     } else {
         vec![] // Empty = use all JE lines as fallback
     }
@@ -476,7 +486,6 @@ impl SamplingPlanGenerator {
         cras: &[CombinedRiskAssessment],
         tolerable_error: Option<Decimal>,
         journal_entries: &[JournalEntry],
-        _account_balances: &HashMap<String, f64>,
     ) -> (Vec<SamplingPlan>, Vec<SampledItem>) {
         info!(
             "Generating JE-aware sampling plans for {} CRAs against {} journal entries",

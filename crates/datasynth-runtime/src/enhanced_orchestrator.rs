@@ -11150,6 +11150,26 @@ impl EnhancedOrchestrator {
             .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let period_end = start_date + chrono::Months::new(self.config.global.period_months);
 
+        // Determine the engagement entity early so we can filter JEs.
+        let company = self.config.companies.first();
+        let company_code = company
+            .map(|c| c.code.clone())
+            .unwrap_or_else(|| "UNKNOWN".to_string());
+        let company_name = company
+            .map(|c| c.name.clone())
+            .unwrap_or_else(|| "Unknown Company".to_string());
+        let currency = company
+            .map(|c| c.currency.clone())
+            .unwrap_or_else(|| "USD".to_string());
+
+        // Filter JEs to the engagement entity for single-company coherence.
+        let entity_entries: Vec<_> = entries
+            .iter()
+            .filter(|e| company_code == "UNKNOWN" || e.header.company_code == company_code)
+            .cloned()
+            .collect();
+        let entries = &entity_entries; // Shadow the parameter for remaining usage
+
         // Financial aggregates from journal entries.
         let total_revenue: rust_decimal::Decimal = entries
             .iter()
@@ -11275,17 +11295,6 @@ impl EnhancedOrchestrator {
             .map(|c| c.code.clone())
             .collect();
 
-        let company = self.config.companies.first();
-        let company_code = company
-            .map(|c| c.code.clone())
-            .unwrap_or_else(|| "UNKNOWN".to_string());
-        let company_name = company
-            .map(|c| c.name.clone())
-            .unwrap_or_else(|| "Unknown Company".to_string());
-        let currency = company
-            .map(|c| c.currency.clone())
-            .unwrap_or_else(|| "USD".to_string());
-
         // Journal entry IDs for evidence tracing (sample up to 50).
         let journal_entry_ids: Vec<String> = entries
             .iter()
@@ -11365,7 +11374,7 @@ impl EnhancedOrchestrator {
         let tb_fy = context.fiscal_year;
         result.artifacts.journal_entries = std::mem::take(&mut context.journal_entries);
         result.artifacts.trial_balance_entries =
-            compute_trial_balance_entries(entries, &tb_entity, tb_fy);
+            compute_trial_balance_entries(entries, &tb_entity, tb_fy, self.coa.as_ref().map(|c| c.as_ref()));
 
         // 5. Map ArtifactBag fields to AuditSnapshot.
         let bag = result.artifacts;
@@ -12748,6 +12757,7 @@ fn compute_trial_balance_entries(
     entries: &[JournalEntry],
     entity_code: &str,
     fiscal_year: i32,
+    coa: Option<&ChartOfAccounts>,
 ) -> Vec<datasynth_audit_fsm::artifact::TrialBalanceEntry> {
     use std::collections::BTreeMap;
 
@@ -12766,8 +12776,10 @@ fn compute_trial_balance_entries(
         .into_iter()
         .map(|(account_code, (debit, credit))| {
             datasynth_audit_fsm::artifact::TrialBalanceEntry {
-                // TODO: Look up account descriptions from Chart of Accounts when available.
-                account_description: account_code.clone(),
+                account_description: coa
+                    .and_then(|c| c.get_account(&account_code))
+                    .map(|a| a.description().to_string())
+                    .unwrap_or_else(|| account_code.clone()),
                 account_code,
                 debit_balance: debit,
                 credit_balance: credit,

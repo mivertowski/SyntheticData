@@ -5,8 +5,6 @@
 //! and amounts, and falls back to synthetic generation when no matching JE
 //! lines exist for a given account area.
 
-use std::collections::HashMap;
-
 use datasynth_core::models::audit::risk_assessment_cra::{
     AuditAssertion, CombinedRiskAssessment, RiskRating,
 };
@@ -88,7 +86,6 @@ fn key_items_use_real_document_ids_and_exceed_tolerable_error() {
         &[cra],
         Some(te),
         &jes,
-        &HashMap::new(),
     );
 
     assert_eq!(plans.len(), 1);
@@ -157,7 +154,6 @@ fn representative_items_use_real_document_ids() {
         &[cra],
         Some(te),
         &jes,
-        &HashMap::new(),
     );
 
     assert_eq!(plans.len(), 1);
@@ -204,7 +200,6 @@ fn fallback_to_synthetic_when_no_matching_jes() {
         &[cra],
         Some(te),
         &jes,
-        &HashMap::new(),
     );
 
     assert_eq!(plans.len(), 1, "Should still generate a plan via fallback");
@@ -252,7 +247,6 @@ fn population_metrics_reflect_real_data() {
         &[cra],
         Some(te),
         &jes,
-        &HashMap::new(),
     );
 
     assert_eq!(plans.len(), 1);
@@ -285,7 +279,6 @@ fn key_items_capped_at_20() {
         &[cra],
         Some(te),
         &jes,
-        &HashMap::new(),
     );
 
     assert_eq!(plans.len(), 1);

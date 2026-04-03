@@ -841,7 +841,6 @@ impl StepDispatcher {
                 &bag.combined_risk_assessments,
                 tolerable_error,
                 &ctx.journal_entries,
-                &ctx.account_balances,
             );
             bag.sampling_plans.extend(plans);
             bag.sampled_items.extend(items);
