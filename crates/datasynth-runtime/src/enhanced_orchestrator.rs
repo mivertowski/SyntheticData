@@ -11155,14 +11155,14 @@ impl EnhancedOrchestrator {
             .iter()
             .flat_map(|e| e.lines.iter())
             .filter(|l| l.account_code.starts_with('4'))
-            .map(|l| l.credit_amount)
+            .map(|l| l.credit_amount - l.debit_amount)
             .sum();
 
         let total_assets: rust_decimal::Decimal = entries
             .iter()
             .flat_map(|e| e.lines.iter())
             .filter(|l| l.account_code.starts_with('1'))
-            .map(|l| l.debit_amount)
+            .map(|l| l.debit_amount - l.credit_amount)
             .sum();
 
         let total_expenses: rust_decimal::Decimal = entries
@@ -11176,20 +11176,56 @@ impl EnhancedOrchestrator {
             .iter()
             .flat_map(|e| e.lines.iter())
             .filter(|l| l.account_code.starts_with('3'))
-            .map(|l| l.credit_amount)
+            .map(|l| l.credit_amount - l.debit_amount)
             .sum();
 
         let total_debt: rust_decimal::Decimal = entries
             .iter()
             .flat_map(|e| e.lines.iter())
             .filter(|l| l.account_code.starts_with('2'))
-            .map(|l| l.credit_amount)
+            .map(|l| l.credit_amount - l.debit_amount)
             .sum();
 
         let pretax_income = total_revenue - total_expenses;
-        let gross_profit = total_revenue * rust_decimal::Decimal::new(35, 2);
-        let working_capital = total_assets - total_debt;
-        let operating_cash_flow = pretax_income * rust_decimal::Decimal::new(85, 2);
+
+        let cogs: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with('5'))
+            .map(|l| l.debit_amount)
+            .sum();
+        let gross_profit = total_revenue - cogs;
+
+        let current_assets: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| {
+                l.account_code.starts_with("10")
+                    || l.account_code.starts_with("11")
+                    || l.account_code.starts_with("12")
+                    || l.account_code.starts_with("13")
+            })
+            .map(|l| l.debit_amount - l.credit_amount)
+            .sum();
+        let current_liabilities: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| {
+                l.account_code.starts_with("20")
+                    || l.account_code.starts_with("21")
+                    || l.account_code.starts_with("22")
+            })
+            .map(|l| l.credit_amount - l.debit_amount)
+            .sum();
+        let working_capital = current_assets - current_liabilities;
+
+        let depreciation: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with("60"))
+            .map(|l| l.debit_amount)
+            .sum();
+        let operating_cash_flow = pretax_income + depreciation;
 
         // GL accounts for reference data.
         let accounts: Vec<String> = self
@@ -11276,7 +11312,7 @@ impl EnhancedOrchestrator {
         let control_ids: Vec<String> = Vec::new();
         let anomaly_refs: Vec<String> = Vec::new();
 
-        let context = EngagementContext {
+        let mut context = EngagementContext {
             company_code,
             company_name,
             fiscal_year: start_date.year(),
@@ -11325,9 +11361,9 @@ impl EnhancedOrchestrator {
         );
 
         // 4b. Populate financial data in the artifact bag for downstream consumers.
-        result.artifacts.journal_entries = entries.to_vec();
         let tb_entity = context.company_code.clone();
         let tb_fy = context.fiscal_year;
+        result.artifacts.journal_entries = std::mem::take(&mut context.journal_entries);
         result.artifacts.trial_balance_entries =
             compute_trial_balance_entries(entries, &tb_entity, tb_fy);
 
@@ -12730,6 +12766,7 @@ fn compute_trial_balance_entries(
         .into_iter()
         .map(|(account_code, (debit, credit))| {
             datasynth_audit_fsm::artifact::TrialBalanceEntry {
+                // TODO: Look up account descriptions from Chart of Accounts when available.
                 account_description: account_code.clone(),
                 account_code,
                 debit_balance: debit,
