@@ -765,8 +765,21 @@ impl StepDispatcher {
     }
 
     /// Generate `CombinedRiskAssessment` records (ISA 315) for the entity.
+    ///
+    /// When account balances are available in the context, inherent risk is
+    /// weighted by each area's proportion of total balances (>15% bumps up,
+    /// <2% bumps down).  Falls back to the default generator when no balances
+    /// are present.
     fn dispatch_cra(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
-        let cras = self.cra_gen.generate_for_entity(&ctx.company_code, None);
+        let cras = if !ctx.account_balances.is_empty() {
+            self.cra_gen.generate_for_entity_with_balances(
+                &ctx.company_code,
+                None,
+                &ctx.account_balances,
+            )
+        } else {
+            self.cra_gen.generate_for_entity(&ctx.company_code, None)
+        };
         bag.combined_risk_assessments.extend(cras);
     }
 
@@ -887,6 +900,11 @@ impl StepDispatcher {
 
     /// Generate `ExternalConfirmation` + `ConfirmationResponse` records
     /// (ISA 505).
+    ///
+    /// When account balances are available in the context, bank/AR/AP
+    /// confirmation book values are derived from real GL balances rather
+    /// than random amounts.  Falls back to the synthetic generator when no
+    /// balances are present.
     fn dispatch_confirmations(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
         let engagement = match bag.engagements.last() {
             Some(e) => e,
@@ -895,13 +913,26 @@ impl StepDispatcher {
                 return;
             }
         };
-        let (confirmations, responses) = self.confirmation_gen.generate_confirmations(
-            engagement,
-            &bag.workpapers,
-            &ctx.accounts,
-        );
-        bag.confirmations.extend(confirmations);
-        bag.confirmation_responses.extend(responses);
+
+        if !ctx.account_balances.is_empty() {
+            let (confirmations, responses) =
+                self.confirmation_gen.generate_confirmations_with_balances(
+                    engagement,
+                    &bag.workpapers,
+                    &ctx.accounts,
+                    &ctx.account_balances,
+                );
+            bag.confirmations.extend(confirmations);
+            bag.confirmation_responses.extend(responses);
+        } else {
+            let (confirmations, responses) = self.confirmation_gen.generate_confirmations(
+                engagement,
+                &bag.workpapers,
+                &ctx.accounts,
+            );
+            bag.confirmations.extend(confirmations);
+            bag.confirmation_responses.extend(responses);
+        }
     }
 
     /// Generate a `GoingConcernAssessment` (ISA 570).
