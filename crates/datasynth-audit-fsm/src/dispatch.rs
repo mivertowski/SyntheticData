@@ -21,7 +21,7 @@ use datasynth_generators::audit::{
     confirmation_generator::ConfirmationGenerator,
     cra_generator::CraGenerator,
     engagement_letter_generator::EngagementLetterGenerator,
-    going_concern_generator::GoingConcernGenerator,
+    going_concern_generator::{GoingConcernGenerator, GoingConcernInput},
     materiality_generator::{MaterialityGenerator, MaterialityInput},
     sampling_plan_generator::SamplingPlanGenerator,
     subsequent_event_generator::SubsequentEventGenerator,
@@ -855,6 +855,10 @@ impl StepDispatcher {
     }
 
     /// Generate `AnalyticalProcedureResult` records (ISA 520).
+    ///
+    /// When journal entries are available, uses the balance-anchored path so
+    /// that `actual_value` reflects real account balances computed from the
+    /// generated JE population.
     fn dispatch_analytical_procedures(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
         let engagement = match bag.engagements.last() {
             Some(e) => e,
@@ -863,10 +867,22 @@ impl StepDispatcher {
                 return;
             }
         };
-        let results = self
-            .analytical_gen
-            .generate_procedures(engagement, &ctx.accounts);
-        bag.analytical_results.extend(results);
+
+        if !ctx.account_balances.is_empty() {
+            // Coherent path: anchor analytical procedures to real account balances.
+            let results = self.analytical_gen.generate_procedures_with_balances(
+                engagement,
+                &ctx.accounts,
+                &ctx.account_balances,
+            );
+            bag.analytical_results.extend(results);
+        } else {
+            // Fallback: fully synthetic generation.
+            let results = self
+                .analytical_gen
+                .generate_procedures(engagement, &ctx.accounts);
+            bag.analytical_results.extend(results);
+        }
     }
 
     /// Generate `ExternalConfirmation` + `ConfirmationResponse` records
@@ -889,11 +905,22 @@ impl StepDispatcher {
     }
 
     /// Generate a `GoingConcernAssessment` (ISA 570).
+    ///
+    /// Uses real financial metrics from [`EngagementContext`] (net income,
+    /// working capital, operating cash flow, total debt) so that going-concern
+    /// indicators are coherent with the generated journal-entry population.
     fn dispatch_going_concern(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
         let period = format!("FY{}", ctx.fiscal_year);
-        let assessment =
-            self.gc_gen
-                .generate_for_entity(&ctx.company_code, ctx.report_date, &period);
+
+        let input = GoingConcernInput {
+            entity_code: ctx.company_code.clone(),
+            net_income: ctx.pretax_income,
+            working_capital: ctx.working_capital,
+            operating_cash_flow: ctx.operating_cash_flow,
+            total_debt: ctx.total_debt,
+            assessment_date: ctx.report_date,
+        };
+        let assessment = self.gc_gen.generate_for_entity_with_input(&input, &period);
         bag.going_concern_assessments.push(assessment);
     }
 

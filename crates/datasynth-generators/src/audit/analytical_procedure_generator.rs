@@ -198,6 +198,138 @@ impl AnalyticalProcedureGenerator {
         results
     }
 
+    /// Generate analytical procedures anchored to real account balances.
+    ///
+    /// Behaves identically to [`generate_procedures`] except that, for each
+    /// procedure, `actual_value` is set to the account's real balance (looked
+    /// up in `account_balances`) and `expectation` is derived as
+    /// `actual_value * (1 + noise)` so the variance is small and realistic.
+    ///
+    /// Accounts that do not appear in `account_balances` fall back to a
+    /// default balance of 100,000.
+    pub fn generate_procedures_with_balances(
+        &mut self,
+        engagement: &AuditEngagement,
+        account_codes: &[String],
+        account_balances: &std::collections::HashMap<String, f64>,
+    ) -> Vec<AnalyticalProcedureResult> {
+        let count = self.rng.random_range(
+            self.config.procedures_per_engagement.0..=self.config.procedures_per_engagement.1,
+        ) as usize;
+
+        // Phase distribution: Planning 20%, Substantive 60%, FinalReview 20%.
+        let planning_count = (count as f64 * 0.20).round() as usize;
+        let final_count = (count as f64 * 0.20).round() as usize;
+        let substantive_count = count.saturating_sub(planning_count + final_count).max(1);
+
+        let mut phases: Vec<AnalyticalPhase> = Vec::with_capacity(count);
+        phases.extend(std::iter::repeat_n(
+            AnalyticalPhase::Planning,
+            planning_count,
+        ));
+        phases.extend(std::iter::repeat_n(
+            AnalyticalPhase::Substantive,
+            substantive_count,
+        ));
+        phases.extend(std::iter::repeat_n(
+            AnalyticalPhase::FinalReview,
+            final_count,
+        ));
+
+        let default_areas = [
+            "Revenue",
+            "Cost of Sales",
+            "Operating Expenses",
+            "Accounts Receivable",
+            "Inventory",
+            "Payroll Expense",
+            "Interest Expense",
+            "Depreciation",
+            "Accounts Payable",
+            "Income Tax Expense",
+        ];
+
+        let all_methods = [
+            AnalyticalMethod::TrendAnalysis,
+            AnalyticalMethod::RatioAnalysis,
+            AnalyticalMethod::ReasonablenessTest,
+            AnalyticalMethod::Regression,
+            AnalyticalMethod::Comparison,
+        ];
+
+        let mut results = Vec::with_capacity(phases.len());
+
+        for (i, &phase) in phases.iter().enumerate() {
+            let account_or_area: String = if !account_codes.is_empty() {
+                let idx = self.rng.random_range(0..account_codes.len());
+                account_codes[idx].clone()
+            } else {
+                let idx = i % default_areas.len();
+                default_areas[idx].to_string()
+            };
+
+            let method = all_methods[i % all_methods.len()];
+
+            // Look up the real balance; fall back to a sensible default.
+            let real_balance = account_balances
+                .get(&account_or_area)
+                .copied()
+                .unwrap_or(100_000.0);
+            let actual_units = real_balance.round() as i64;
+            let actual_value = Decimal::new(actual_units.max(0), 0);
+
+            // Threshold: 5-15% of actual value.
+            let threshold_pct: f64 = self.rng.random_range(0.05..0.15);
+            let threshold_units = (actual_units as f64 * threshold_pct).round().abs() as i64;
+            let threshold = Decimal::new(threshold_units.max(1), 0);
+
+            // Expectation = actual_value + small normal noise (σ = threshold * 0.6).
+            let sigma = (actual_units as f64 * threshold_pct * 0.6).abs().max(1.0);
+            let normal = Normal::new(0.0_f64, sigma)
+                .unwrap_or_else(|_| Normal::new(0.0, 1.0).expect("fallback Normal"));
+            let noise = normal.sample(&mut self.rng);
+            let expect_units = (actual_units as f64 + noise).round() as i64;
+            let expect_units = expect_units.max(0);
+            let expectation = Decimal::new(expect_units, 0);
+
+            let expectation_basis =
+                format!("Prior year adjusted for growth — {method:?} applied to {account_or_area}");
+            let threshold_basis = format!("{:.0}% of expectation", threshold_pct * 100.0);
+
+            let mut result = AnalyticalProcedureResult::new(
+                engagement.engagement_id,
+                account_or_area.clone(),
+                method,
+                expectation,
+                expectation_basis,
+                threshold,
+                threshold_basis,
+                actual_value,
+            );
+
+            result.procedure_phase = phase;
+
+            let conclusion = self.choose_conclusion(result.requires_investigation);
+            result.conclusion = Some(conclusion);
+            result.status = datasynth_core::models::audit::AnalyticalStatus::Concluded;
+
+            if !matches!(conclusion, AnalyticalConclusion::Consistent) {
+                result.explanation = Some(self.explanation_text(conclusion, &account_or_area));
+                if matches!(conclusion, AnalyticalConclusion::ExplainedVariance) {
+                    result.explanation_corroborated = Some(true);
+                    result.corroboration_evidence = Some(
+                        "Management provided supporting schedule; figures agreed to source data."
+                            .to_string(),
+                    );
+                }
+            }
+
+            results.push(result);
+        }
+
+        results
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
