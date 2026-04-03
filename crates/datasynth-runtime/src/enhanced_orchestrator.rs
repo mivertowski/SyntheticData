@@ -11348,6 +11348,26 @@ impl EnhancedOrchestrator {
             journal_entries: entries.to_vec(),
             is_us_listed: false,
             entity_codes,
+            auditor_firm_name: "DataSynth Audit LLP".into(),
+            accounting_framework: self
+                .config
+                .accounting_standards
+                .framework
+                .map(|f| match f {
+                    datasynth_config::schema::AccountingFrameworkConfig::UsGaap => "US GAAP",
+                    datasynth_config::schema::AccountingFrameworkConfig::Ifrs => "IFRS",
+                    datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap => {
+                        "French GAAP"
+                    }
+                    datasynth_config::schema::AccountingFrameworkConfig::GermanGaap => {
+                        "German GAAP"
+                    }
+                    datasynth_config::schema::AccountingFrameworkConfig::DualReporting => {
+                        "Dual Reporting"
+                    }
+                })
+                .unwrap_or("IFRS")
+                .into(),
         };
 
         // 4. Create and run the FSM engine.

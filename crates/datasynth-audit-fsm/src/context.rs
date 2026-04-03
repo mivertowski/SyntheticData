@@ -64,6 +64,14 @@ pub struct EngagementContext {
     pub is_us_listed: bool,
     /// Entity codes participating in the engagement (e.g. group audit).
     pub entity_codes: Vec<String>,
+
+    // Engagement metadata (for opinion/letter dispatch coherence)
+    /// Name of the audit firm issuing the opinion (e.g. "DataSynth Audit LLP").
+    /// Populated from config in the orchestrator; defaults to "DataSynth Audit LLP" in demo().
+    pub auditor_firm_name: String,
+    /// Accounting framework for the engagement letter (e.g. "IFRS", "US GAAP").
+    /// Populated from config in the orchestrator; defaults to "IFRS" in demo().
+    pub accounting_framework: String,
 }
 
 impl EngagementContext {
@@ -135,6 +143,10 @@ impl EngagementContext {
             // Flags
             is_us_listed: false,
             entity_codes: vec!["TEST01".into()],
+
+            // Engagement metadata
+            auditor_firm_name: "DataSynth Audit LLP".into(),
+            accounting_framework: "IFRS".into(),
         }
     }
 }

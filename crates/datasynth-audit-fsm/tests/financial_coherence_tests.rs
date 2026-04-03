@@ -118,6 +118,8 @@ fn test_fsm_sampling_uses_real_je_ids() {
         is_us_listed: false,
         entity_codes: vec!["C001".to_string()],
         journal_entries: entries,
+        auditor_firm_name: "DataSynth Audit LLP".to_string(),
+        accounting_framework: "IFRS".to_string(),
     };
 
     // Run FSM with builtin FSA blueprint

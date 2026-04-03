@@ -725,7 +725,7 @@ impl StepDispatcher {
             entity_count,
             ctx.report_date,
             &ctx.currency,
-            "IFRS", // default framework; overlay could refine this
+            &ctx.accounting_framework,
             ctx.engagement_start,
         );
         bag.engagement_letters.push(letter);
@@ -1072,7 +1072,43 @@ impl StepDispatcher {
         }
 
         // Enrich findings with journal entry evidence references.
-        if !ctx.journal_entry_ids.is_empty() {
+        // Prefer account-filtered matching: link each finding to a JE whose
+        // GL lines overlap with the finding's `accounts_affected`.  Fall back
+        // to the flat `journal_entry_ids` list (round-robin) when full JEs are
+        // not available or no account match is found.
+        if !ctx.journal_entries.is_empty() {
+            for (i, finding) in findings.iter_mut().enumerate() {
+                let matching_je = if !finding.accounts_affected.is_empty() {
+                    ctx.journal_entries.iter().find(|je| {
+                        je.lines.iter().any(|line| {
+                            finding.accounts_affected.iter().any(|acct| {
+                                // Match on exact code or leading-prefix (e.g. "4000" matches "4000.10")
+                                line.gl_account == *acct
+                                    || line.gl_account.starts_with(acct)
+                                    || line.account_code == *acct
+                                    || line.account_code.starts_with(acct)
+                            })
+                        })
+                    })
+                } else {
+                    None
+                };
+
+                let je_ref = if let Some(je) = matching_je {
+                    je.header.document_id.to_string()
+                } else if !ctx.journal_entry_ids.is_empty() {
+                    // Fallback: round-robin from flat ID list
+                    ctx.journal_entry_ids[i % ctx.journal_entry_ids.len()].clone()
+                } else {
+                    continue;
+                };
+
+                if !finding.effect.is_empty() {
+                    finding.effect = format!("{} [Supporting JE: {}]", finding.effect, je_ref);
+                }
+            }
+        } else if !ctx.journal_entry_ids.is_empty() {
+            // Legacy path: no full JEs available, round-robin assign IDs.
             for (i, finding) in findings.iter_mut().enumerate() {
                 let je_ref = &ctx.journal_entry_ids[i % ctx.journal_entry_ids.len()];
                 if !finding.effect.is_empty() {
@@ -1126,7 +1162,7 @@ impl StepDispatcher {
             going_concern: bag.going_concern_assessments.last().cloned(),
             component_reports: Vec::new(),
             is_us_listed: ctx.is_us_listed,
-            auditor_name: "DataSynth Audit LLP".to_string(),
+            auditor_name: ctx.auditor_firm_name.clone(),
             engagement_partner: engagement.engagement_partner_name.clone(),
         };
 
