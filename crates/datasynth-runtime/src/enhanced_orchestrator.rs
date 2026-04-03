@@ -11310,7 +11310,7 @@ impl EnhancedOrchestrator {
         let rng = ChaCha8Rng::seed_from_u64(seed);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-        let result = engine
+        let mut result = engine
             .run_engagement(&context)
             .map_err(|e| SynthError::generation(format!("FSM engine failed: {e}")))?;
 
@@ -11323,6 +11323,13 @@ impl EnhancedOrchestrator {
             result.phases_completed.len(),
             result.total_duration_hours,
         );
+
+        // 4b. Populate financial data in the artifact bag for downstream consumers.
+        result.artifacts.journal_entries = entries.to_vec();
+        let tb_entity = context.company_code.clone();
+        let tb_fy = context.fiscal_year;
+        result.artifacts.trial_balance_entries =
+            compute_trial_balance_entries(entries, &tb_entity, tb_fy);
 
         // 5. Map ArtifactBag fields to AuditSnapshot.
         let bag = result.artifacts;
@@ -12695,6 +12702,44 @@ fn format_name(format: datasynth_config::schema::GraphExportFormat) -> &'static 
         datasynth_config::schema::GraphExportFormat::RustGraph => "rustgraph",
         datasynth_config::schema::GraphExportFormat::RustGraphHypergraph => "rustgraph_hypergraph",
     }
+}
+
+/// Aggregate journal entry lines into per-account trial balance rows.
+///
+/// Each unique `account_code` gets one [`TrialBalanceEntry`] with summed
+/// debit/credit totals and a net balance (debit minus credit).
+fn compute_trial_balance_entries(
+    entries: &[JournalEntry],
+    entity_code: &str,
+    fiscal_year: i32,
+) -> Vec<datasynth_audit_fsm::artifact::TrialBalanceEntry> {
+    use std::collections::BTreeMap;
+
+    let mut balances: BTreeMap<String, (rust_decimal::Decimal, rust_decimal::Decimal)> =
+        BTreeMap::new();
+
+    for je in entries {
+        for line in &je.lines {
+            let entry = balances.entry(line.account_code.clone()).or_default();
+            entry.0 += line.debit_amount;
+            entry.1 += line.credit_amount;
+        }
+    }
+
+    balances
+        .into_iter()
+        .map(|(account_code, (debit, credit))| {
+            datasynth_audit_fsm::artifact::TrialBalanceEntry {
+                account_description: account_code.clone(),
+                account_code,
+                debit_balance: debit,
+                credit_balance: credit,
+                net_balance: debit - credit,
+                entity_code: entity_code.to_string(),
+                period: format!("FY{}", fiscal_year),
+            }
+        })
+        .collect()
 }
 
 #[cfg(test)]
