@@ -11300,6 +11300,7 @@ impl EnhancedOrchestrator {
             account_balances,
             control_ids,
             anomaly_refs,
+            journal_entries: entries.to_vec(),
             is_us_listed: false,
             entity_codes,
         };

@@ -55,6 +55,10 @@ pub struct EngagementContext {
     /// Injected anomaly references for finding-to-anomaly linking.
     pub anomaly_refs: Vec<String>,
 
+    /// Full journal entry population for coherent sampling and analytics.
+    /// When populated, sampling and analytical procedures use real JE data.
+    pub journal_entries: Vec<datasynth_core::models::JournalEntry>,
+
     // Configuration flags
     /// Whether the entity is listed on a US exchange (triggers PCAOB/SOX paths).
     pub is_us_listed: bool,
@@ -126,6 +130,7 @@ impl EngagementContext {
                 "C020".into(), // Bank reconciliation
             ],
             anomaly_refs: Vec::new(),
+            journal_entries: Vec::new(),
 
             // Flags
             is_us_listed: false,
