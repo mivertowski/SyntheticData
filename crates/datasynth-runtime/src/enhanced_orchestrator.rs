@@ -11154,16 +11154,42 @@ impl EnhancedOrchestrator {
         let total_revenue: rust_decimal::Decimal = entries
             .iter()
             .flat_map(|e| e.lines.iter())
-            .filter(|l| l.credit_amount > rust_decimal::Decimal::ZERO)
+            .filter(|l| l.account_code.starts_with('4'))
             .map(|l| l.credit_amount)
             .sum();
 
         let total_assets: rust_decimal::Decimal = entries
             .iter()
             .flat_map(|e| e.lines.iter())
-            .filter(|l| l.debit_amount > rust_decimal::Decimal::ZERO)
+            .filter(|l| l.account_code.starts_with('1'))
             .map(|l| l.debit_amount)
             .sum();
+
+        let total_expenses: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with('5') || l.account_code.starts_with('6'))
+            .map(|l| l.debit_amount)
+            .sum();
+
+        let equity: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with('3'))
+            .map(|l| l.credit_amount)
+            .sum();
+
+        let total_debt: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with('2'))
+            .map(|l| l.credit_amount)
+            .sum();
+
+        let pretax_income = total_revenue - total_expenses;
+        let gross_profit = total_revenue * rust_decimal::Decimal::new(35, 2);
+        let working_capital = total_assets - total_debt;
+        let operating_cash_flow = pretax_income * rust_decimal::Decimal::new(85, 2);
 
         // GL accounts for reference data.
         let accounts: Vec<String> = self
@@ -11259,12 +11285,12 @@ impl EnhancedOrchestrator {
             total_assets,
             engagement_start: start_date,
             report_date: period_end,
-            pretax_income: rust_decimal::Decimal::ZERO,
-            equity: rust_decimal::Decimal::ZERO,
-            gross_profit: rust_decimal::Decimal::ZERO,
-            working_capital: rust_decimal::Decimal::ZERO,
-            operating_cash_flow: rust_decimal::Decimal::ZERO,
-            total_debt: rust_decimal::Decimal::ZERO,
+            pretax_income,
+            equity,
+            gross_profit,
+            working_capital,
+            operating_cash_flow,
+            total_debt,
             team_member_ids,
             team_member_pairs,
             accounts,
