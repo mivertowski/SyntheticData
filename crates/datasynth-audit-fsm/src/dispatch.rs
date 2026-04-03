@@ -835,11 +835,24 @@ impl StepDispatcher {
             .first()
             .map(|m| m.performance_materiality);
 
-        let (plans, items) = self
-            .sampling_gen
-            .generate_for_cras(&bag.combined_risk_assessments, tolerable_error);
-        bag.sampling_plans.extend(plans);
-        bag.sampled_items.extend(items);
+        if !ctx.journal_entries.is_empty() {
+            // Coherent path: use real JE population for sampling
+            let (plans, items) = self.sampling_gen.generate_for_cras_with_population(
+                &bag.combined_risk_assessments,
+                tolerable_error,
+                &ctx.journal_entries,
+                &ctx.account_balances,
+            );
+            bag.sampling_plans.extend(plans);
+            bag.sampled_items.extend(items);
+        } else {
+            // Fallback: synthetic generation (backward compatible)
+            let (plans, items) = self
+                .sampling_gen
+                .generate_for_cras(&bag.combined_risk_assessments, tolerable_error);
+            bag.sampling_plans.extend(plans);
+            bag.sampled_items.extend(items);
+        }
     }
 
     /// Generate `AnalyticalProcedureResult` records (ISA 520).
