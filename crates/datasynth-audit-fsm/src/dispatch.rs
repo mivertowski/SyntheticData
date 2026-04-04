@@ -14,7 +14,7 @@
 
 use tracing::warn;
 
-use datasynth_core::models::audit::WorkpaperSection;
+use datasynth_core::models::audit::{CraLevel, WorkpaperSection};
 use datasynth_generators::audit::{
     analytical_procedure_generator::AnalyticalProcedureGenerator,
     audit_opinion_generator::{AuditOpinionGenerator, AuditOpinionInput},
@@ -24,9 +24,9 @@ use datasynth_generators::audit::{
     going_concern_generator::{GoingConcernGenerator, GoingConcernInput},
     materiality_generator::{MaterialityGenerator, MaterialityInput},
     sampling_plan_generator::SamplingPlanGenerator,
-    subsequent_event_generator::SubsequentEventGenerator,
+    subsequent_event_generator::{SubsequentEventGenerator, SubsequentEventInput},
     AuditEngagementGenerator, AvailableControl, AvailableRisk, EvidenceGenerator, FindingGenerator,
-    JudgmentGenerator, RiskAssessmentGenerator, WorkpaperGenerator,
+    JudgmentContext, JudgmentGenerator, RiskAssessmentGenerator, WorkpaperGenerator,
 };
 
 use std::collections::HashMap;
@@ -956,23 +956,86 @@ impl StepDispatcher {
     }
 
     /// Generate `SubsequentEvent` records (ISA 560).
+    ///
+    /// Extracts high-risk areas from CRAs and going-concern status from
+    /// the artifact bag to produce context-aware events with proportional
+    /// financial impacts.
     fn dispatch_subsequent_events(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
+        let high_risk_areas: Vec<String> = bag
+            .combined_risk_assessments
+            .iter()
+            .filter(|c| matches!(c.combined_risk, CraLevel::High | CraLevel::Moderate))
+            .map(|c| c.account_area.clone())
+            .collect();
+
+        let gc_doubt = bag
+            .going_concern_assessments
+            .last()
+            .map(|gc| gc.material_uncertainty_exists)
+            .unwrap_or(false);
+
+        let input = SubsequentEventInput {
+            total_revenue: ctx.total_revenue,
+            total_assets: ctx.total_assets,
+            pretax_income: ctx.pretax_income,
+            high_risk_areas,
+            going_concern_doubt: gc_doubt,
+        };
+
         let events = self
             .se_gen
-            .generate_for_entity(&ctx.company_code, ctx.report_date);
+            .generate_for_entity_with_context(&ctx.company_code, ctx.report_date, &input);
         bag.subsequent_events.extend(events);
     }
 
     /// Generate a `ProfessionalJudgment` record (ISA 200). Requires an
     /// engagement in the bag.
+    ///
+    /// Populates a [`JudgmentContext`] from the artifact bag so that the
+    /// judgment narrative references real materiality amounts, risk areas,
+    /// finding counts, and going-concern status.
     fn dispatch_judgment(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
         let engagement = match bag.engagements.last() {
             Some(e) => e,
             None => return,
         };
+
+        let jctx = JudgmentContext {
+            materiality_amount: bag
+                .materiality_calculations
+                .last()
+                .map(|m| m.overall_materiality),
+            materiality_basis: bag
+                .materiality_calculations
+                .last()
+                .map(|m| format!("{}", m.benchmark)),
+            materiality_percentage: bag
+                .materiality_calculations
+                .last()
+                .map(|m| m.benchmark_percentage),
+            high_risk_count: bag
+                .combined_risk_assessments
+                .iter()
+                .filter(|c| matches!(c.combined_risk, CraLevel::High))
+                .count(),
+            high_risk_areas: bag
+                .combined_risk_assessments
+                .iter()
+                .filter(|c| matches!(c.combined_risk, CraLevel::High))
+                .map(|c| c.account_area.clone())
+                .collect(),
+            going_concern_doubt: bag
+                .going_concern_assessments
+                .last()
+                .map(|gc| gc.material_uncertainty_exists)
+                .unwrap_or(false),
+            finding_count: bag.findings.len(),
+            total_misstatement: None,
+        };
+
         let judgment = self
             .judgment_gen
-            .generate_judgment(engagement, &ctx.team_member_ids);
+            .generate_judgment_with_context(engagement, &ctx.team_member_ids, &jctx);
         bag.judgments.push(judgment);
     }
 
