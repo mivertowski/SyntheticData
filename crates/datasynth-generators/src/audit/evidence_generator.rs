@@ -14,6 +14,21 @@ use datasynth_core::models::audit::{
     ReliabilityLevel, Workpaper,
 };
 
+/// Context for generating coherent audit evidence.
+///
+/// When provided, evidence type selection, reliability weighting, and amount
+/// anchoring are driven by the workpaper's risk assessment context rather
+/// than random generation.
+#[derive(Debug, Clone, Default)]
+pub struct EvidenceContext {
+    /// CRA risk level for the workpaper's account area (High -> more external evidence).
+    pub risk_level: Option<String>, // "High", "Moderate", "Low"
+    /// Real account balance for the workpaper's GL area (anchors evidence amounts).
+    pub account_balance: Option<f64>,
+    /// Primary assertion being tested (Existence -> confirmation, Completeness -> analytical).
+    pub assertion: Option<String>,
+}
+
 /// Configuration for evidence generation.
 #[derive(Debug, Clone)]
 pub struct EvidenceGeneratorConfig {
@@ -93,6 +108,104 @@ impl EvidenceGenerator {
                 )
             })
             .collect()
+    }
+
+    /// Generate evidence for a workpaper with risk/assertion/balance context.
+    ///
+    /// When the [`EvidenceContext`] provides an assertion, evidence types are
+    /// weighted to match audit methodology (e.g. Existence favours
+    /// confirmations; Completeness favours analytical procedures).  When a
+    /// risk level is provided, high-risk areas receive a higher proportion of
+    /// external third-party evidence.  When an account balance is provided,
+    /// AI-extracted amounts are anchored to the real GL balance.
+    pub fn generate_evidence_for_workpaper_with_context(
+        &mut self,
+        workpaper: &Workpaper,
+        team_members: &[String],
+        base_date: NaiveDate,
+        context: &EvidenceContext,
+    ) -> Vec<AuditEvidence> {
+        let count = self.rng.random_range(
+            self.config.evidence_per_workpaper.0..=self.config.evidence_per_workpaper.1,
+        );
+
+        (0..count)
+            .map(|i| {
+                self.generate_evidence_with_context(
+                    workpaper.engagement_id,
+                    Some(workpaper.workpaper_id),
+                    &workpaper.assertions_tested,
+                    team_members,
+                    base_date + Duration::days(i as i64),
+                    context,
+                )
+            })
+            .collect()
+    }
+
+    /// Generate a single piece of evidence with assertion/risk/balance context.
+    fn generate_evidence_with_context(
+        &mut self,
+        engagement_id: Uuid,
+        workpaper_id: Option<Uuid>,
+        assertions: &[Assertion],
+        team_members: &[String],
+        obtained_date: NaiveDate,
+        context: &EvidenceContext,
+    ) -> AuditEvidence {
+        self.evidence_counter += 1;
+
+        // Use context-aware type selection when assertion is provided.
+        let (evidence_type, source_type) =
+            if context.assertion.is_some() || context.risk_level.is_some() {
+                self.select_evidence_type_and_source_with_context(context)
+            } else {
+                self.select_evidence_type_and_source()
+            };
+
+        let title = self.generate_evidence_title(evidence_type);
+        let mut evidence = AuditEvidence::new(engagement_id, evidence_type, source_type, &title);
+        evidence.evidence_ref = format!("EV-{:06}", self.evidence_counter);
+
+        let description = self.generate_evidence_description(evidence_type, source_type);
+        evidence = evidence.with_description(&description);
+
+        let obtainer = self.select_team_member(team_members);
+        evidence = evidence.with_obtained_by(&obtainer, obtained_date);
+
+        let file_size = self
+            .rng
+            .random_range(self.config.file_size_range.0..=self.config.file_size_range.1);
+        let file_path = self.generate_file_path(evidence_type, self.evidence_counter);
+        let file_hash = format!("sha256:{:064x}", self.rng.random::<u128>());
+        evidence = evidence.with_file_info(&file_path, &file_hash, file_size);
+
+        let reliability = self.generate_reliability_assessment(source_type);
+        evidence = evidence.with_reliability(reliability);
+
+        if assertions.is_empty() {
+            evidence = evidence.with_assertions(vec![self.random_assertion()]);
+        } else {
+            evidence = evidence.with_assertions(assertions.to_vec());
+        }
+
+        if let Some(wp_id) = workpaper_id {
+            evidence.link_workpaper(wp_id);
+        }
+
+        // AI extraction with balance-anchored amounts when available.
+        if self.rng.random::<f64>() < self.config.ai_extraction_probability {
+            let terms = if let Some(balance) = context.account_balance {
+                self.generate_ai_terms_anchored(evidence_type, balance)
+            } else {
+                self.generate_ai_terms(evidence_type)
+            };
+            let confidence = self.rng.random_range(0.75..0.98);
+            let summary = self.generate_ai_summary(evidence_type);
+            evidence = evidence.with_ai_extraction(terms, confidence, &summary);
+        }
+
+        evidence
     }
 
     /// Generate a single piece of evidence.
@@ -237,6 +350,206 @@ impl EvidenceGenerator {
             let idx = self.rng.random_range(0..internal_types.len());
             internal_types[idx]
         }
+    }
+
+    /// Select evidence type and source with assertion/risk context.
+    ///
+    /// Assertion drives the preferred evidence types:
+    /// - Existence/Occurrence -> Confirmation, PhysicalObservation, BankStatement
+    /// - Completeness -> Analysis, SystemExtract, Recalculation
+    /// - Valuation -> SpecialistReport, Recalculation, Analysis
+    ///
+    /// High risk increases the proportion of ExternalThirdParty sources.
+    fn select_evidence_type_and_source_with_context(
+        &mut self,
+        context: &EvidenceContext,
+    ) -> (EvidenceType, EvidenceSource) {
+        // Determine external probability: high risk = 40%, moderate = 25%, default = 20%.
+        let external_prob = match context.risk_level.as_deref() {
+            Some("High") => 0.40,
+            Some("Moderate") => 0.25,
+            _ => self.config.external_third_party_probability,
+        };
+
+        // Build assertion-matched type pools.
+        let assertion_str = context.assertion.as_deref().unwrap_or("");
+
+        let preferred_external: Vec<(EvidenceType, EvidenceSource)> = match assertion_str {
+            s if s.contains("Existence") || s.contains("Occurrence") => vec![
+                (
+                    EvidenceType::Confirmation,
+                    EvidenceSource::ExternalThirdParty,
+                ),
+                (
+                    EvidenceType::BankStatement,
+                    EvidenceSource::ExternalThirdParty,
+                ),
+                (
+                    EvidenceType::PhysicalObservation,
+                    EvidenceSource::AuditorPrepared,
+                ),
+            ],
+            s if s.contains("Valuation") => vec![
+                (
+                    EvidenceType::SpecialistReport,
+                    EvidenceSource::ExternalThirdParty,
+                ),
+                (
+                    EvidenceType::Confirmation,
+                    EvidenceSource::ExternalThirdParty,
+                ),
+            ],
+            _ => vec![
+                (
+                    EvidenceType::Confirmation,
+                    EvidenceSource::ExternalThirdParty,
+                ),
+                (
+                    EvidenceType::BankStatement,
+                    EvidenceSource::ExternalThirdParty,
+                ),
+                (
+                    EvidenceType::LegalLetter,
+                    EvidenceSource::ExternalThirdParty,
+                ),
+                (
+                    EvidenceType::Contract,
+                    EvidenceSource::ExternalClientProvided,
+                ),
+            ],
+        };
+
+        let preferred_internal: Vec<(EvidenceType, EvidenceSource)> = match assertion_str {
+            s if s.contains("Completeness") => vec![
+                (EvidenceType::Analysis, EvidenceSource::AuditorPrepared),
+                (
+                    EvidenceType::SystemExtract,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+                (EvidenceType::Recalculation, EvidenceSource::AuditorPrepared),
+            ],
+            s if s.contains("Valuation") => vec![
+                (EvidenceType::Recalculation, EvidenceSource::AuditorPrepared),
+                (EvidenceType::Analysis, EvidenceSource::AuditorPrepared),
+                (
+                    EvidenceType::SystemExtract,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+            ],
+            s if s.contains("Existence") || s.contains("Occurrence") => vec![
+                (
+                    EvidenceType::Document,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+                (
+                    EvidenceType::Invoice,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+                (
+                    EvidenceType::SystemExtract,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+            ],
+            _ => vec![
+                (
+                    EvidenceType::Document,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+                (
+                    EvidenceType::Invoice,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+                (
+                    EvidenceType::SystemExtract,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+                (EvidenceType::Analysis, EvidenceSource::AuditorPrepared),
+                (EvidenceType::Recalculation, EvidenceSource::AuditorPrepared),
+                (
+                    EvidenceType::MeetingMinutes,
+                    EvidenceSource::InternalClientPrepared,
+                ),
+                (EvidenceType::Email, EvidenceSource::InternalClientPrepared),
+            ],
+        };
+
+        let is_external = self.rng.random::<f64>() < external_prob;
+
+        if is_external && !preferred_external.is_empty() {
+            let idx = self.rng.random_range(0..preferred_external.len());
+            preferred_external[idx]
+        } else if !preferred_internal.is_empty() {
+            let idx = self.rng.random_range(0..preferred_internal.len());
+            preferred_internal[idx]
+        } else {
+            self.select_evidence_type_and_source()
+        }
+    }
+
+    /// Generate AI-extracted terms anchored to a real account balance.
+    fn generate_ai_terms_anchored(
+        &mut self,
+        evidence_type: EvidenceType,
+        account_balance: f64,
+    ) -> std::collections::HashMap<String, String> {
+        let mut terms = std::collections::HashMap::new();
+
+        let default_end = NaiveDate::from_ymd_opt(2025, 12, 31).expect("valid date");
+        let period_end = self.config.period_end_date.unwrap_or(default_end);
+        let period_end_str = period_end.format("%Y-%m-%d").to_string();
+        let period_start_str = NaiveDate::from_ymd_opt(period_end.year(), 1, 1)
+            .expect("valid date")
+            .format("%Y-%m-%d")
+            .to_string();
+
+        // Small variance around the real balance (+-2%).
+        let variance_pct = self.rng.random_range(-0.02..0.02);
+        let anchored_amount = account_balance * (1.0 + variance_pct);
+
+        match evidence_type {
+            EvidenceType::Invoice => {
+                terms.insert(
+                    "invoice_number".into(),
+                    format!("INV-{:06}", self.rng.random_range(100000..999999)),
+                );
+                // Anchor to a fraction of the balance (single invoice).
+                let fraction = self.rng.random_range(0.005..0.05);
+                terms.insert(
+                    "amount".into(),
+                    format!("{:.2}", account_balance * fraction),
+                );
+                terms.insert("vendor".into(), "Extracted Vendor Name".into());
+            }
+            EvidenceType::Contract => {
+                terms.insert("effective_date".into(), period_start_str);
+                terms.insert(
+                    "term_years".into(),
+                    format!("{}", self.rng.random_range(1..5)),
+                );
+                terms.insert("total_value".into(), format!("{:.2}", anchored_amount));
+            }
+            EvidenceType::BankStatement => {
+                terms.insert("ending_balance".into(), format!("{:.2}", anchored_amount));
+                terms.insert("statement_date".into(), period_end_str);
+            }
+            EvidenceType::Confirmation => {
+                terms.insert(
+                    "confirmed_balance".into(),
+                    format!("{:.2}", anchored_amount),
+                );
+                terms.insert("confirmation_date".into(), period_end_str);
+            }
+            _ => {
+                terms.insert("document_date".into(), period_end_str);
+                terms.insert(
+                    "reference".into(),
+                    format!("REF-{:06}", self.rng.random_range(100000..999999)),
+                );
+                terms.insert("reported_amount".into(), format!("{:.2}", anchored_amount));
+            }
+        }
+
+        terms
     }
 
     /// Generate evidence title.
@@ -570,6 +883,109 @@ mod tests {
         assert!(evidence.ai_extracted_terms.is_some());
         assert!(evidence.ai_confidence.is_some());
         assert!(evidence.ai_summary.is_some());
+    }
+
+    #[test]
+    fn test_evidence_with_context_existence_favors_confirmation() {
+        // With Existence assertion + High risk, evidence should favor
+        // external types (Confirmation, BankStatement, PhysicalObservation).
+        let mut generator = EvidenceGenerator::new(42);
+        let context = EvidenceContext {
+            risk_level: Some("High".into()),
+            account_balance: Some(1_250_000.0),
+            assertion: Some("Existence".into()),
+        };
+
+        let mut external_count = 0;
+        let total = 50;
+        for _ in 0..total {
+            let evidence = generator.generate_evidence_with_context(
+                Uuid::new_v4(),
+                None,
+                &[Assertion::Existence],
+                &["STAFF001".into()],
+                NaiveDate::from_ymd_opt(2025, 1, 15).unwrap(),
+                &context,
+            );
+            if matches!(
+                evidence.source_type,
+                EvidenceSource::ExternalThirdParty | EvidenceSource::AuditorPrepared
+            ) && matches!(
+                evidence.evidence_type,
+                EvidenceType::Confirmation
+                    | EvidenceType::BankStatement
+                    | EvidenceType::PhysicalObservation
+            ) {
+                external_count += 1;
+            }
+        }
+        // With High risk + Existence, we expect a meaningful proportion of
+        // confirmation/observation evidence (more than baseline ~10%).
+        assert!(
+            external_count > 5,
+            "Expected >5 confirmation/observation evidence, got {external_count}/{total}"
+        );
+    }
+
+    #[test]
+    fn test_evidence_with_context_completeness_favors_analysis() {
+        let mut generator = EvidenceGenerator::new(42);
+        let context = EvidenceContext {
+            risk_level: Some("Moderate".into()),
+            account_balance: None,
+            assertion: Some("Completeness".into()),
+        };
+
+        let mut analytical_count = 0;
+        let total = 50;
+        for _ in 0..total {
+            let evidence = generator.generate_evidence_with_context(
+                Uuid::new_v4(),
+                None,
+                &[Assertion::Completeness],
+                &["STAFF001".into()],
+                NaiveDate::from_ymd_opt(2025, 1, 15).unwrap(),
+                &context,
+            );
+            if matches!(
+                evidence.evidence_type,
+                EvidenceType::Analysis | EvidenceType::SystemExtract | EvidenceType::Recalculation
+            ) {
+                analytical_count += 1;
+            }
+        }
+        // Completeness should heavily favor analytical/system evidence.
+        assert!(
+            analytical_count > 20,
+            "Expected >20 analytical evidence, got {analytical_count}/{total}"
+        );
+    }
+
+    #[test]
+    fn test_evidence_anchored_amounts() {
+        let config = EvidenceGeneratorConfig {
+            ai_extraction_probability: 1.0,
+            ..Default::default()
+        };
+        let mut generator = EvidenceGenerator::with_config(42, config);
+        let balance = 1_000_000.0;
+        let context = EvidenceContext {
+            risk_level: None,
+            account_balance: Some(balance),
+            assertion: None,
+        };
+
+        let evidence = generator.generate_evidence_with_context(
+            Uuid::new_v4(),
+            None,
+            &[],
+            &["STAFF001".into()],
+            NaiveDate::from_ymd_opt(2025, 1, 15).unwrap(),
+            &context,
+        );
+
+        // AI terms should be present and amounts should be near the balance.
+        assert!(evidence.ai_extracted_terms.is_some());
     }
 
     #[test]

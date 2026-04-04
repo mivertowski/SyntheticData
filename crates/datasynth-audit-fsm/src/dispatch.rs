@@ -25,8 +25,9 @@ use datasynth_generators::audit::{
     materiality_generator::{MaterialityGenerator, MaterialityInput},
     sampling_plan_generator::SamplingPlanGenerator,
     subsequent_event_generator::{SubsequentEventGenerator, SubsequentEventInput},
-    AuditEngagementGenerator, AvailableControl, AvailableRisk, EvidenceGenerator, FindingGenerator,
-    JudgmentContext, JudgmentGenerator, RiskAssessmentGenerator, WorkpaperGenerator,
+    AuditEngagementGenerator, AvailableControl, AvailableRisk, EvidenceContext, EvidenceGenerator,
+    FindingGenerator, JudgmentContext, JudgmentGenerator, RiskAssessmentGenerator,
+    WorkpaperEnrichment, WorkpaperGenerator,
 };
 
 use std::collections::HashMap;
@@ -620,11 +621,14 @@ impl StepDispatcher {
 
             // Create an evidence artifact with the analytical narrative.
             if let Some(wp) = bag.workpapers.last() {
-                let evidence = self.evidence_gen.generate_evidence_for_workpaper(
-                    wp,
-                    &ctx.team_member_ids,
-                    ctx.engagement_start,
-                );
+                let evidence = self
+                    .evidence_gen
+                    .generate_evidence_for_workpaper_with_context(
+                        wp,
+                        &ctx.team_member_ids,
+                        ctx.engagement_start,
+                        &EvidenceContext::default(),
+                    );
                 // Enrich the first evidence item with the analytical narrative.
                 let mut enriched: Vec<_> = evidence.into_iter().collect();
                 if let Some(ev) = enriched.first_mut() {
@@ -784,6 +788,11 @@ impl StepDispatcher {
     }
 
     /// Generate a workpaper (ISA 230) for a design/planning step.
+    ///
+    /// When CRAs, materiality calculations, and sampling plans are available
+    /// in the bag, the workpaper is enriched with real financial data (account
+    /// balances, performance materiality, sampling details).  Evidence
+    /// generated for the workpaper also receives assertion/risk context.
     fn dispatch_workpaper(
         &mut self,
         step: &BlueprintStep,
@@ -800,17 +809,22 @@ impl StepDispatcher {
         };
 
         let section = section_for_command(step.command.as_deref().unwrap_or(""));
-        let mut wp = self.workpaper_gen.generate_workpaper(
+
+        // Build enrichment from the artifact bag.
+        let enrichment = self.build_workpaper_enrichment(procedure_id, ctx, bag);
+
+        let mut wp = self.workpaper_gen.generate_workpaper_with_context(
             engagement,
             section,
             ctx.engagement_start,
             &ctx.team_member_ids,
+            &enrichment,
         );
 
         // Enrich workpaper objective with content generator narrative.
         let standards_refs: Vec<String> = step.standards.iter().map(|s| s.ref_id.clone()).collect();
         let actor = step.actor.as_deref().unwrap_or("audit_team");
-        wp.objective = self
+        let narrative = self
             .content_gen
             .generate_workpaper_narrative(&WorkpaperContext {
                 procedure_id: procedure_id.to_string(),
@@ -822,16 +836,88 @@ impl StepDispatcher {
                     standards_refs
                 },
             });
+        wp.objective = format!("{} | {}", narrative, wp.objective);
 
-        // Also generate evidence for this workpaper.
-        let evidence = self.evidence_gen.generate_evidence_for_workpaper(
-            &wp,
-            &ctx.team_member_ids,
-            ctx.engagement_start,
-        );
+        // Build evidence context from the same CRA match.
+        let ev_context = EvidenceContext {
+            risk_level: enrichment.risk_level.clone(),
+            account_balance: enrichment
+                .account_balance
+                .and_then(|d| d.to_string().parse::<f64>().ok()),
+            assertion: None, // Workpaper-level dispatch doesn't have a single assertion
+        };
+
+        let evidence = self
+            .evidence_gen
+            .generate_evidence_for_workpaper_with_context(
+                &wp,
+                &ctx.team_member_ids,
+                ctx.engagement_start,
+                &ev_context,
+            );
 
         bag.evidence.extend(evidence);
         bag.workpapers.push(wp);
+    }
+
+    /// Build a [`WorkpaperEnrichment`] from the artifact bag, attempting to
+    /// match a CRA to the current procedure context.
+    fn build_workpaper_enrichment(
+        &self,
+        procedure_id: &str,
+        ctx: &EngagementContext,
+        bag: &ArtifactBag,
+    ) -> WorkpaperEnrichment {
+        let proc_lower = procedure_id.to_lowercase();
+
+        // Try to find a CRA whose account_area matches the procedure context.
+        let matching_cra = bag.combined_risk_assessments.iter().find(|c| {
+            let area_lower = c.account_area.to_lowercase();
+            proc_lower.contains(&area_lower)
+                || area_lower
+                    .split_whitespace()
+                    .any(|word| word.len() > 3 && proc_lower.contains(word))
+        });
+
+        let (account_area, risk_level, account_balance) = if let Some(cra) = matching_cra {
+            let balance = ctx
+                .account_balances
+                .iter()
+                .find(|(code, _)| {
+                    let area_lower = cra.account_area.to_lowercase();
+                    code.to_lowercase().contains(&area_lower)
+                        || area_lower.contains(&code.to_lowercase())
+                })
+                .and_then(|(_, bal)| rust_decimal::Decimal::from_f64_retain(bal.abs()));
+
+            (
+                Some(cra.account_area.clone()),
+                Some(format!("{}", cra.combined_risk)),
+                balance,
+            )
+        } else {
+            (None, None, None)
+        };
+
+        let materiality = bag
+            .materiality_calculations
+            .first()
+            .map(|m| m.performance_materiality);
+
+        let sampling_info = bag.sampling_plans.last().map(|sp| {
+            format!(
+                "{} \u{2014} Population: {}, Sample: {}",
+                sp.methodology, sp.population_size, sp.sample_size
+            )
+        });
+
+        WorkpaperEnrichment {
+            account_area,
+            account_balance,
+            risk_level,
+            materiality,
+            sampling_info,
+        }
     }
 
     /// Generate `SamplingPlan` + `SampledItem` records (ISA 530) from CRAs
@@ -982,9 +1068,11 @@ impl StepDispatcher {
             going_concern_doubt: gc_doubt,
         };
 
-        let events = self
-            .se_gen
-            .generate_for_entity_with_context(&ctx.company_code, ctx.report_date, &input);
+        let events = self.se_gen.generate_for_entity_with_context(
+            &ctx.company_code,
+            ctx.report_date,
+            &input,
+        );
         bag.subsequent_events.extend(events);
     }
 
@@ -1033,27 +1121,73 @@ impl StepDispatcher {
             total_misstatement: None,
         };
 
-        let judgment = self
-            .judgment_gen
-            .generate_judgment_with_context(engagement, &ctx.team_member_ids, &jctx);
+        let judgment = self.judgment_gen.generate_judgment_with_context(
+            engagement,
+            &ctx.team_member_ids,
+            &jctx,
+        );
         bag.judgments.push(judgment);
     }
 
     /// Generate `AuditEvidence` records for the most recent workpaper in the
     /// bag (ISA 500).
+    ///
+    /// When CRAs are available, attempts to match the workpaper to a CRA by
+    /// section/title text to extract risk level, account balance, and
+    /// assertion context.  This drives assertion-matched evidence type
+    /// selection and balance-anchored amounts.
     fn dispatch_evidence(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
         if let Some(wp) = bag.workpapers.last() {
-            let evidence = self.evidence_gen.generate_evidence_for_workpaper(
-                wp,
-                &ctx.team_member_ids,
-                ctx.engagement_start,
-            );
+            let context = if !bag.combined_risk_assessments.is_empty() {
+                let wp_section = format!("{:?}", wp.section);
+                let wp_title_lower = wp.title.to_lowercase();
+                let matching_cra = bag.combined_risk_assessments.iter().find(|c| {
+                    let area_lower = c.account_area.to_lowercase();
+                    wp_title_lower.contains(&area_lower)
+                        || area_lower.contains(&wp_section.to_lowercase())
+                        || wp_section.to_lowercase().contains(&area_lower)
+                });
+
+                if let Some(cra) = matching_cra {
+                    let balance = ctx
+                        .account_balances
+                        .iter()
+                        .find(|(code, _)| {
+                            let area_lower = cra.account_area.to_lowercase();
+                            code.to_lowercase().contains(&area_lower)
+                                || area_lower.contains(&code.to_lowercase())
+                        })
+                        .map(|(_, bal)| bal.abs());
+
+                    EvidenceContext {
+                        risk_level: Some(format!("{}", cra.combined_risk)),
+                        account_balance: balance,
+                        assertion: Some(format!("{}", cra.assertion)),
+                    }
+                } else {
+                    EvidenceContext::default()
+                }
+            } else {
+                EvidenceContext::default()
+            };
+
+            let evidence = self
+                .evidence_gen
+                .generate_evidence_for_workpaper_with_context(
+                    wp,
+                    &ctx.team_member_ids,
+                    ctx.engagement_start,
+                    &context,
+                );
             bag.evidence.extend(evidence);
         }
     }
 
     /// Generate a workpaper in a specific section (ISA 230). Requires an
     /// engagement in the bag.
+    ///
+    /// Uses the enriched generation path so that materiality and sampling
+    /// context propagates to section-specific workpapers.
     fn dispatch_workpaper_section(
         &mut self,
         step: &BlueprintStep,
@@ -1066,17 +1200,21 @@ impl StepDispatcher {
             Some(e) => e,
             None => return,
         };
-        let mut wp = self.workpaper_gen.generate_workpaper(
+
+        let enrichment = self.build_workpaper_enrichment(procedure_id, ctx, bag);
+
+        let mut wp = self.workpaper_gen.generate_workpaper_with_context(
             engagement,
             section,
             ctx.engagement_start,
             &ctx.team_member_ids,
+            &enrichment,
         );
 
         // Enrich workpaper objective with content generator narrative.
         let standards_refs: Vec<String> = step.standards.iter().map(|s| s.ref_id.clone()).collect();
         let actor = step.actor.as_deref().unwrap_or("audit_team");
-        wp.objective = self
+        let narrative = self
             .content_gen
             .generate_workpaper_narrative(&WorkpaperContext {
                 procedure_id: procedure_id.to_string(),
@@ -1088,6 +1226,7 @@ impl StepDispatcher {
                     standards_refs
                 },
             });
+        wp.objective = format!("{} | {}", narrative, wp.objective);
 
         bag.workpapers.push(wp);
     }
@@ -1269,7 +1408,7 @@ impl StepDispatcher {
     fn dispatch_generic_workpaper(
         &mut self,
         step: &BlueprintStep,
-        _procedure_id: &str,
+        procedure_id: &str,
         ctx: &EngagementContext,
         bag: &mut ArtifactBag,
     ) {
@@ -1283,11 +1422,13 @@ impl StepDispatcher {
         };
 
         let section = section_for_command(step.command.as_deref().unwrap_or(""));
-        let wp = self.workpaper_gen.generate_workpaper(
+        let enrichment = self.build_workpaper_enrichment(procedure_id, ctx, bag);
+        let wp = self.workpaper_gen.generate_workpaper_with_context(
             engagement,
             section,
             ctx.engagement_start,
             &ctx.team_member_ids,
+            &enrichment,
         );
         bag.workpapers.push(wp);
     }
