@@ -11150,20 +11150,102 @@ impl EnhancedOrchestrator {
             .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let period_end = start_date + chrono::Months::new(self.config.global.period_months);
 
+        // Determine the engagement entity early so we can filter JEs.
+        let company = self.config.companies.first();
+        let company_code = company
+            .map(|c| c.code.clone())
+            .unwrap_or_else(|| "UNKNOWN".to_string());
+        let company_name = company
+            .map(|c| c.name.clone())
+            .unwrap_or_else(|| "Unknown Company".to_string());
+        let currency = company
+            .map(|c| c.currency.clone())
+            .unwrap_or_else(|| "USD".to_string());
+
+        // Filter JEs to the engagement entity for single-company coherence.
+        let entity_entries: Vec<_> = entries
+            .iter()
+            .filter(|e| company_code == "UNKNOWN" || e.header.company_code == company_code)
+            .cloned()
+            .collect();
+        let entries = &entity_entries; // Shadow the parameter for remaining usage
+
         // Financial aggregates from journal entries.
         let total_revenue: rust_decimal::Decimal = entries
             .iter()
             .flat_map(|e| e.lines.iter())
-            .filter(|l| l.credit_amount > rust_decimal::Decimal::ZERO)
-            .map(|l| l.credit_amount)
+            .filter(|l| l.account_code.starts_with('4'))
+            .map(|l| l.credit_amount - l.debit_amount)
             .sum();
 
         let total_assets: rust_decimal::Decimal = entries
             .iter()
             .flat_map(|e| e.lines.iter())
-            .filter(|l| l.debit_amount > rust_decimal::Decimal::ZERO)
+            .filter(|l| l.account_code.starts_with('1'))
+            .map(|l| l.debit_amount - l.credit_amount)
+            .sum();
+
+        let total_expenses: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with('5') || l.account_code.starts_with('6'))
             .map(|l| l.debit_amount)
             .sum();
+
+        let equity: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with('3'))
+            .map(|l| l.credit_amount - l.debit_amount)
+            .sum();
+
+        let total_debt: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with('2'))
+            .map(|l| l.credit_amount - l.debit_amount)
+            .sum();
+
+        let pretax_income = total_revenue - total_expenses;
+
+        let cogs: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with('5'))
+            .map(|l| l.debit_amount)
+            .sum();
+        let gross_profit = total_revenue - cogs;
+
+        let current_assets: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| {
+                l.account_code.starts_with("10")
+                    || l.account_code.starts_with("11")
+                    || l.account_code.starts_with("12")
+                    || l.account_code.starts_with("13")
+            })
+            .map(|l| l.debit_amount - l.credit_amount)
+            .sum();
+        let current_liabilities: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| {
+                l.account_code.starts_with("20")
+                    || l.account_code.starts_with("21")
+                    || l.account_code.starts_with("22")
+            })
+            .map(|l| l.credit_amount - l.debit_amount)
+            .sum();
+        let working_capital = current_assets - current_liabilities;
+
+        let depreciation: rust_decimal::Decimal = entries
+            .iter()
+            .flat_map(|e| e.lines.iter())
+            .filter(|l| l.account_code.starts_with("60"))
+            .map(|l| l.debit_amount)
+            .sum();
+        let operating_cash_flow = pretax_income + depreciation;
 
         // GL accounts for reference data.
         let accounts: Vec<String> = self
@@ -11213,17 +11295,6 @@ impl EnhancedOrchestrator {
             .map(|c| c.code.clone())
             .collect();
 
-        let company = self.config.companies.first();
-        let company_code = company
-            .map(|c| c.code.clone())
-            .unwrap_or_else(|| "UNKNOWN".to_string());
-        let company_name = company
-            .map(|c| c.name.clone())
-            .unwrap_or_else(|| "Unknown Company".to_string());
-        let currency = company
-            .map(|c| c.currency.clone())
-            .unwrap_or_else(|| "USD".to_string());
-
         // Journal entry IDs for evidence tracing (sample up to 50).
         let journal_entry_ids: Vec<String> = entries
             .iter()
@@ -11250,7 +11321,7 @@ impl EnhancedOrchestrator {
         let control_ids: Vec<String> = Vec::new();
         let anomaly_refs: Vec<String> = Vec::new();
 
-        let context = EngagementContext {
+        let mut context = EngagementContext {
             company_code,
             company_name,
             fiscal_year: start_date.year(),
@@ -11259,12 +11330,12 @@ impl EnhancedOrchestrator {
             total_assets,
             engagement_start: start_date,
             report_date: period_end,
-            pretax_income: rust_decimal::Decimal::ZERO,
-            equity: rust_decimal::Decimal::ZERO,
-            gross_profit: rust_decimal::Decimal::ZERO,
-            working_capital: rust_decimal::Decimal::ZERO,
-            operating_cash_flow: rust_decimal::Decimal::ZERO,
-            total_debt: rust_decimal::Decimal::ZERO,
+            pretax_income,
+            equity,
+            gross_profit,
+            working_capital,
+            operating_cash_flow,
+            total_debt,
             team_member_ids,
             team_member_pairs,
             accounts,
@@ -11274,8 +11345,29 @@ impl EnhancedOrchestrator {
             account_balances,
             control_ids,
             anomaly_refs,
+            journal_entries: entries.to_vec(),
             is_us_listed: false,
             entity_codes,
+            auditor_firm_name: "DataSynth Audit LLP".into(),
+            accounting_framework: self
+                .config
+                .accounting_standards
+                .framework
+                .map(|f| match f {
+                    datasynth_config::schema::AccountingFrameworkConfig::UsGaap => "US GAAP",
+                    datasynth_config::schema::AccountingFrameworkConfig::Ifrs => "IFRS",
+                    datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap => {
+                        "French GAAP"
+                    }
+                    datasynth_config::schema::AccountingFrameworkConfig::GermanGaap => {
+                        "German GAAP"
+                    }
+                    datasynth_config::schema::AccountingFrameworkConfig::DualReporting => {
+                        "Dual Reporting"
+                    }
+                })
+                .unwrap_or("IFRS")
+                .into(),
         };
 
         // 4. Create and run the FSM engine.
@@ -11283,7 +11375,7 @@ impl EnhancedOrchestrator {
         let rng = ChaCha8Rng::seed_from_u64(seed);
         let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
-        let result = engine
+        let mut result = engine
             .run_engagement(&context)
             .map_err(|e| SynthError::generation(format!("FSM engine failed: {e}")))?;
 
@@ -11295,6 +11387,17 @@ impl EnhancedOrchestrator {
             result.anomalies.len(),
             result.phases_completed.len(),
             result.total_duration_hours,
+        );
+
+        // 4b. Populate financial data in the artifact bag for downstream consumers.
+        let tb_entity = context.company_code.clone();
+        let tb_fy = context.fiscal_year;
+        result.artifacts.journal_entries = std::mem::take(&mut context.journal_entries);
+        result.artifacts.trial_balance_entries = compute_trial_balance_entries(
+            entries,
+            &tb_entity,
+            tb_fy,
+            self.coa.as_ref().map(|c| c.as_ref()),
         );
 
         // 5. Map ArtifactBag fields to AuditSnapshot.
@@ -12668,6 +12771,48 @@ fn format_name(format: datasynth_config::schema::GraphExportFormat) -> &'static 
         datasynth_config::schema::GraphExportFormat::RustGraph => "rustgraph",
         datasynth_config::schema::GraphExportFormat::RustGraphHypergraph => "rustgraph_hypergraph",
     }
+}
+
+/// Aggregate journal entry lines into per-account trial balance rows.
+///
+/// Each unique `account_code` gets one [`TrialBalanceEntry`] with summed
+/// debit/credit totals and a net balance (debit minus credit).
+fn compute_trial_balance_entries(
+    entries: &[JournalEntry],
+    entity_code: &str,
+    fiscal_year: i32,
+    coa: Option<&ChartOfAccounts>,
+) -> Vec<datasynth_audit_fsm::artifact::TrialBalanceEntry> {
+    use std::collections::BTreeMap;
+
+    let mut balances: BTreeMap<String, (rust_decimal::Decimal, rust_decimal::Decimal)> =
+        BTreeMap::new();
+
+    for je in entries {
+        for line in &je.lines {
+            let entry = balances.entry(line.account_code.clone()).or_default();
+            entry.0 += line.debit_amount;
+            entry.1 += line.credit_amount;
+        }
+    }
+
+    balances
+        .into_iter()
+        .map(
+            |(account_code, (debit, credit))| datasynth_audit_fsm::artifact::TrialBalanceEntry {
+                account_description: coa
+                    .and_then(|c| c.get_account(&account_code))
+                    .map(|a| a.description().to_string())
+                    .unwrap_or_else(|| account_code.clone()),
+                account_code,
+                debit_balance: debit,
+                credit_balance: credit,
+                net_balance: debit - credit,
+                entity_code: entity_code.to_string(),
+                period: format!("FY{}", fiscal_year),
+            },
+        )
+        .collect()
 }
 
 #[cfg(test)]

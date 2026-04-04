@@ -1,4 +1,4 @@
-# DataSynth v2.0.0
+# DataSynth v2.1.0
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)

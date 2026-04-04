@@ -24,12 +24,15 @@
 //! When no JE data is available, synthetic key items are generated based on
 //! a fraction of the population size.
 
+use std::collections::HashSet;
+
 use datasynth_core::models::audit::risk_assessment_cra::{
     AuditAssertion, CombinedRiskAssessment, CraLevel,
 };
 use datasynth_core::models::audit::sampling_plan::{
     KeyItem, KeyItemReason, SampledItem, SamplingMethodology, SamplingPlan, SelectionType,
 };
+use datasynth_core::models::journal_entry::{JournalEntry, JournalEntryLine};
 use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
@@ -83,6 +86,75 @@ fn misstatement_rate(cra: CraLevel) -> f64 {
         CraLevel::Moderate => 0.08,
         CraLevel::High => 0.15,
     }
+}
+
+/// Map an audit account area name to GL account code prefixes.
+fn account_area_to_prefixes(account_area: &str) -> Vec<&'static str> {
+    let lower = account_area.to_lowercase();
+    if lower.contains("revenue") || lower.contains("sales") {
+        vec!["4"]
+    } else if lower.contains("receivable") {
+        vec!["11"]
+    } else if lower.contains("payable") {
+        vec!["20"]
+    } else if lower.contains("inventory") || lower.contains("stock") {
+        vec!["12", "13"]
+    } else if lower.contains("cash") || lower.contains("bank") {
+        vec!["10"]
+    } else if lower.contains("fixed asset") || lower.contains("ppe") || lower.contains("property") {
+        vec!["14", "15", "16"]
+    } else if lower.contains("equity") || lower.contains("capital") {
+        vec!["3"]
+    } else if lower.contains("expense") || lower.contains("cost") {
+        vec!["5", "6"]
+    } else if lower.contains("debt") || lower.contains("loan") || lower.contains("borrow") {
+        vec!["23", "24"]
+    } else if lower.contains("tax") {
+        vec!["17", "25"]
+    } else if lower.contains("provision") {
+        vec!["26"]
+    } else if lower.contains("intangible") || lower.contains("goodwill") {
+        vec!["19"]
+    } else if lower.contains("interest") {
+        vec!["71"]
+    } else if lower.contains("other income") || lower.contains("other expense") {
+        vec!["7"]
+    } else if lower.contains("depreciation") || lower.contains("amortization") {
+        vec!["60"]
+    } else if lower.contains("salary") || lower.contains("wages") || lower.contains("payroll") {
+        vec!["61"]
+    } else if lower.contains("rent") || lower.contains("lease") {
+        vec!["63"]
+    } else {
+        vec![] // Empty = use all JE lines as fallback
+    }
+}
+
+/// Filter JE lines matching the account area's GL prefixes.
+/// Returns (JournalEntry ref, JournalEntryLine ref, absolute amount) tuples.
+fn filter_je_lines_for_area<'a>(
+    entries: &'a [JournalEntry],
+    account_area: &str,
+) -> Vec<(&'a JournalEntry, &'a JournalEntryLine, Decimal)> {
+    let prefixes = account_area_to_prefixes(account_area);
+    let mut results = Vec::new();
+
+    for je in entries {
+        for line in &je.lines {
+            let matches = if prefixes.is_empty() {
+                true
+            } else {
+                prefixes.iter().any(|p| line.account_code.starts_with(p))
+            };
+            if matches {
+                let amount = (line.debit_amount - line.credit_amount).abs();
+                if amount > Decimal::ZERO {
+                    results.push((je, line, amount));
+                }
+            }
+        }
+    }
+    results
 }
 
 // ---------------------------------------------------------------------------
@@ -395,6 +467,217 @@ impl SamplingPlanGenerator {
         } else {
             KeyItemReason::HighRisk
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // JE-aware sampling (population-based)
+    // -----------------------------------------------------------------------
+
+    /// Generate sampling plans using real journal entry population data.
+    ///
+    /// Key items are actual JE lines with amount > tolerable_error.
+    /// Representative items are sampled from the remaining JE population.
+    /// Falls back to synthetic generation for CRAs with no matching JE lines.
+    pub fn generate_for_cras_with_population(
+        &mut self,
+        cras: &[CombinedRiskAssessment],
+        tolerable_error: Option<Decimal>,
+        journal_entries: &[JournalEntry],
+    ) -> (Vec<SamplingPlan>, Vec<SampledItem>) {
+        info!(
+            "Generating JE-aware sampling plans for {} CRAs against {} journal entries",
+            cras.len(),
+            journal_entries.len()
+        );
+        let mut plans: Vec<SamplingPlan> = Vec::new();
+        let mut all_items: Vec<SampledItem> = Vec::new();
+
+        for cra in cras {
+            // Only generate plans for Moderate and High CRA levels
+            if cra.combined_risk < CraLevel::Moderate {
+                continue;
+            }
+
+            let te =
+                tolerable_error.unwrap_or_else(|| self.config.base_population_value * dec!(0.05));
+
+            let matching_lines = filter_je_lines_for_area(journal_entries, &cra.account_area);
+
+            let (plan, items) = if matching_lines.is_empty() {
+                // Fallback to synthetic generation when no JE lines match
+                self.generate_plan(cra, te)
+            } else {
+                self.generate_plan_from_population(cra, te, &matching_lines)
+            };
+
+            all_items.extend(items);
+            plans.push(plan);
+        }
+
+        info!(
+            "Generated {} JE-aware sampling plans with {} sampled items",
+            plans.len(),
+            all_items.len()
+        );
+        (plans, all_items)
+    }
+
+    /// Generate a sampling plan from a real JE population for one CRA.
+    fn generate_plan_from_population(
+        &mut self,
+        cra: &CombinedRiskAssessment,
+        tolerable_error: Decimal,
+        matching_lines: &[(&JournalEntry, &JournalEntryLine, Decimal)],
+    ) -> (SamplingPlan, Vec<SampledItem>) {
+        let methodology = methodology_for_assertion(cra.assertion, cra.combined_risk);
+        let rep_sample_size = sample_size_for_cra(&mut self.rng, cra.combined_risk);
+
+        // Compute real population metrics
+        let population_size = matching_lines.len();
+        let population_value: Decimal = matching_lines.iter().map(|(_, _, amt)| *amt).sum();
+
+        // Sort lines descending by amount for key item selection
+        let mut sorted_lines: Vec<_> = matching_lines.to_vec();
+        sorted_lines.sort_by(|a, b| b.2.cmp(&a.2));
+
+        // Select key items: lines where amount > tolerable_error, capped at 20
+        let mut key_items: Vec<KeyItem> = Vec::new();
+        let mut seen_ids: HashSet<String> = HashSet::new();
+
+        for (idx, (je, _line, amount)) in sorted_lines.iter().enumerate() {
+            if *amount <= tolerable_error {
+                break;
+            }
+            if key_items.len() >= 20 {
+                break;
+            }
+            let je_id = je.header.document_id.to_string();
+            // Skip duplicate JE IDs (same JE may have multiple matching lines)
+            if seen_ids.contains(&je_id) {
+                continue;
+            }
+            seen_ids.insert(je_id.clone());
+            let reason = self.pick_key_item_reason(cra, idx);
+            key_items.push(KeyItem {
+                item_id: je_id,
+                amount: *amount,
+                reason,
+            });
+        }
+
+        let key_items_value: Decimal = key_items.iter().map(|k| k.amount).sum();
+        let remaining_value = (population_value - key_items_value).max(Decimal::ZERO);
+
+        // Select representative items from remaining lines using systematic selection
+        let remaining: Vec<_> = sorted_lines
+            .iter()
+            .filter(|(je, _, _)| !seen_ids.contains(&je.header.document_id.to_string()))
+            .collect();
+        let actual_rep_size = rep_sample_size.min(remaining.len());
+        let step = if actual_rep_size > 0 {
+            remaining.len() / actual_rep_size
+        } else {
+            0
+        };
+        let start = if step > 0 {
+            self.rng.random_range(0..step)
+        } else {
+            0
+        };
+
+        // Compute sampling interval
+        let sampling_interval = if actual_rep_size > 0 && remaining_value > Decimal::ZERO {
+            remaining_value / Decimal::from(actual_rep_size as i64)
+        } else {
+            Decimal::ZERO
+        };
+
+        let plan_id = format!(
+            "SP-{}-{}-{}",
+            cra.entity_code,
+            cra.account_area.replace(' ', "_").to_uppercase(),
+            format!("{:?}", cra.assertion).to_uppercase(),
+        );
+
+        let plan = SamplingPlan {
+            id: plan_id.clone(),
+            entity_code: cra.entity_code.clone(),
+            account_area: cra.account_area.clone(),
+            assertion: format!("{}", cra.assertion),
+            methodology,
+            population_size,
+            population_value,
+            key_items: key_items.clone(),
+            key_items_value,
+            remaining_population_value: remaining_value,
+            sample_size: actual_rep_size,
+            sampling_interval,
+            cra_level: cra.combined_risk.to_string(),
+            tolerable_error,
+        };
+
+        // Build SampledItems
+        let mut sampled_items: Vec<SampledItem> = Vec::new();
+        let misstatement_p = misstatement_rate(cra.combined_risk);
+
+        // Key items — always tested
+        for ki in &key_items {
+            let misstatement_found: bool = self.rng.random::<f64>() < misstatement_p;
+            let misstatement_amount = if misstatement_found {
+                let pct = Decimal::try_from(self.rng.random_range(0.01_f64..=0.15_f64))
+                    .unwrap_or(dec!(0.05));
+                Some((ki.amount * pct).round_dp(2))
+            } else {
+                None
+            };
+
+            sampled_items.push(SampledItem {
+                item_id: ki.item_id.clone(),
+                sampling_plan_id: plan_id.clone(),
+                amount: ki.amount,
+                selection_type: SelectionType::KeyItem,
+                tested: true,
+                misstatement_found,
+                misstatement_amount,
+            });
+        }
+
+        // Representative items via systematic selection
+        if actual_rep_size > 0 && step > 0 {
+            let mut rep_seen: HashSet<String> = HashSet::new();
+            for i in 0..actual_rep_size {
+                let idx = (start + i * step) % remaining.len();
+                let (je, _line, amount) = remaining[idx];
+                let je_id = je.header.document_id.to_string();
+
+                // Avoid duplicate representative items
+                if rep_seen.contains(&je_id) {
+                    continue;
+                }
+                rep_seen.insert(je_id.clone());
+
+                let misstatement_found: bool = self.rng.random::<f64>() < misstatement_p;
+                let misstatement_amount = if misstatement_found {
+                    let pct = Decimal::try_from(self.rng.random_range(0.01_f64..=0.30_f64))
+                        .unwrap_or(dec!(0.05));
+                    Some((amount * pct).round_dp(2))
+                } else {
+                    None
+                };
+
+                sampled_items.push(SampledItem {
+                    item_id: je_id,
+                    sampling_plan_id: plan_id.clone(),
+                    amount: *amount,
+                    selection_type: SelectionType::Representative,
+                    tested: true,
+                    misstatement_found,
+                    misstatement_amount,
+                });
+            }
+        }
+
+        (plan, sampled_items)
     }
 }
 

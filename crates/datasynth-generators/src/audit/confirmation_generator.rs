@@ -4,10 +4,13 @@
 //! Supports bank balance, accounts receivable, accounts payable, and
 //! other confirmation types with realistic response distributions.
 
+use std::collections::HashMap;
+
 use chrono::Duration;
 use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
+use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 
 use datasynth_core::models::audit::{
@@ -234,6 +237,193 @@ impl ConfirmationGenerator {
                     }
                     ResponseType::NoReply => {
                         // Handled above — should not reach here.
+                        confirmation.status = ConfirmationStatus::NoResponse;
+                    }
+                }
+
+                responses.push(response);
+            }
+
+            confirmations.push(confirmation);
+        }
+
+        (confirmations, responses)
+    }
+
+    /// Generate confirmations using real account balances for book values.
+    ///
+    /// When a confirmation is of type `BankBalance`, `AccountsReceivable`, or
+    /// `AccountsPayable`, the book balance is derived from matching GL accounts
+    /// in `account_balances` (keyed by GL account code).  If no matching
+    /// balance is found, falls back to the existing synthetic generation.
+    ///
+    /// The response logic (confirmed, exception, no reply) is identical to the
+    /// base method.
+    pub fn generate_confirmations_with_balances(
+        &mut self,
+        engagement: &AuditEngagement,
+        workpapers: &[Workpaper],
+        account_codes: &[String],
+        account_balances: &HashMap<String, f64>,
+    ) -> (Vec<ExternalConfirmation>, Vec<ConfirmationResponse>) {
+        let count = self.rng.random_range(
+            self.config.confirmations_per_engagement.0..=self.config.confirmations_per_engagement.1,
+        ) as usize;
+
+        let substantive_wps: Vec<&Workpaper> = workpapers
+            .iter()
+            .filter(|wp| wp.section == WorkpaperSection::SubstantiveTesting)
+            .collect();
+
+        let mut confirmations = Vec::with_capacity(count);
+        let mut responses = Vec::with_capacity(count);
+
+        // Pre-compute aggregate balances for each confirmation category.
+        let bank_balance: f64 = account_balances
+            .iter()
+            .filter(|(code, _)| code.starts_with("10"))
+            .map(|(_, bal)| bal.abs())
+            .sum();
+        let ar_balance: f64 = account_balances
+            .iter()
+            .filter(|(code, _)| code.starts_with("11"))
+            .map(|(_, bal)| bal.abs())
+            .sum();
+        let ap_balance: f64 = account_balances
+            .iter()
+            .filter(|(code, _)| code.starts_with("20"))
+            .map(|(_, bal)| bal.abs())
+            .sum();
+
+        for i in 0..count {
+            let (conf_type, recipient_type, recipient_name) =
+                self.choose_confirmation_type(i, count);
+
+            let account_code: Option<String> = if account_codes.is_empty() {
+                None
+            } else {
+                let idx = self.rng.random_range(0..account_codes.len());
+                Some(account_codes[idx].clone())
+            };
+
+            // Use real balances when available for the matching confirmation type.
+            let real_balance = match conf_type {
+                ConfirmationType::BankBalance | ConfirmationType::Loan => bank_balance,
+                ConfirmationType::AccountsReceivable => ar_balance,
+                ConfirmationType::AccountsPayable => ap_balance,
+                _ => 0.0,
+            };
+
+            // Synthetic fallback: $10k - $5M (same as original generate_confirmations).
+            let synthetic_units: i64 = self.rng.random_range(10_000_i64..=5_000_000_i64);
+            let synthetic_balance = Decimal::new(synthetic_units * 100, 2);
+
+            let book_balance = if real_balance > 0.0 {
+                Decimal::from_f64(real_balance).unwrap_or(synthetic_balance)
+            } else {
+                synthetic_balance
+            };
+            let balance_units_for_exception = if real_balance > 0.0 {
+                real_balance as i64
+            } else {
+                synthetic_units
+            };
+
+            let confirmation_date = engagement.period_end_date;
+
+            let fieldwork_days = (engagement.fieldwork_end - engagement.fieldwork_start)
+                .num_days()
+                .max(1);
+            let sent_offset = self.rng.random_range(0..fieldwork_days);
+            let sent_date = engagement.fieldwork_start + Duration::days(sent_offset);
+            let deadline = sent_date + Duration::days(30);
+
+            self.confirmation_counter += 1;
+
+            let mut confirmation = ExternalConfirmation::new(
+                engagement.engagement_id,
+                conf_type,
+                &recipient_name,
+                recipient_type,
+                book_balance,
+                confirmation_date,
+            );
+
+            confirmation.confirmation_ref = format!(
+                "CONF-{}-{:04}",
+                engagement.fiscal_year, self.confirmation_counter
+            );
+
+            if !substantive_wps.is_empty() {
+                let wp_idx = self.rng.random_range(0..substantive_wps.len());
+                confirmation = confirmation.with_workpaper(substantive_wps[wp_idx].workpaper_id);
+            }
+
+            if let Some(ref code) = account_code {
+                confirmation = confirmation.with_account(code);
+            }
+
+            confirmation.send(sent_date, deadline);
+
+            // Determine response outcome (identical logic to generate_confirmations).
+            let roll: f64 = self.rng.random();
+            let no_response_cutoff = self.config.no_response_ratio;
+            let exception_cutoff = no_response_cutoff + self.config.exception_response_ratio;
+            let confirmed_cutoff = exception_cutoff + self.config.confirmed_response_ratio;
+
+            if roll < no_response_cutoff {
+                confirmation.status = ConfirmationStatus::NoResponse;
+            } else {
+                let response_days = self.rng.random_range(5_i64..=25_i64);
+                let response_date = sent_date + Duration::days(response_days);
+
+                let response_type = if roll < exception_cutoff {
+                    ResponseType::ConfirmedWithException
+                } else if roll < confirmed_cutoff {
+                    ResponseType::Confirmed
+                } else {
+                    ResponseType::Denied
+                };
+
+                let mut response = ConfirmationResponse::new(
+                    confirmation.confirmation_id,
+                    engagement.engagement_id,
+                    response_date,
+                    response_type,
+                );
+
+                match response_type {
+                    ResponseType::Confirmed => {
+                        response = response.with_confirmed_balance(book_balance);
+                        confirmation.status = ConfirmationStatus::Completed;
+                    }
+                    ResponseType::ConfirmedWithException => {
+                        let exception_pct: f64 = self.rng.random_range(0.01..0.08);
+                        let exception_units =
+                            (balance_units_for_exception as f64 * exception_pct).round() as i64;
+                        let exception_amount = Decimal::new(exception_units.max(1) * 100, 2);
+                        let confirmed_balance = book_balance - exception_amount;
+
+                        response = response
+                            .with_confirmed_balance(confirmed_balance)
+                            .with_exception(
+                                exception_amount,
+                                self.exception_description(conf_type),
+                            );
+
+                        if self.rng.random::<f64>() < self.config.exception_reconciled_ratio {
+                            response.reconcile(
+                                "Difference investigated and reconciled to timing items \
+                                 — no audit adjustment required.",
+                            );
+                        }
+
+                        confirmation.status = ConfirmationStatus::Completed;
+                    }
+                    ResponseType::Denied => {
+                        confirmation.status = ConfirmationStatus::AlternativeProcedures;
+                    }
+                    ResponseType::NoReply => {
                         confirmation.status = ConfirmationStatus::NoResponse;
                     }
                 }
@@ -608,6 +798,99 @@ mod tests {
                 Some(wp_id),
                 "confirmation {} should link to workpaper {wp_id}",
                 conf.confirmation_ref
+            );
+        }
+    }
+
+    /// Confirmations with real balances use the supplied AR/AP/Cash amounts.
+    #[test]
+    fn test_balance_weighted_confirmations_use_real_balances() {
+        use datasynth_core::models::audit::ConfirmationType;
+
+        let engagement = create_test_engagement();
+        let accounts = vec!["1100".to_string(), "2000".to_string(), "1010".to_string()];
+        let balances = HashMap::from([
+            ("1100".into(), 1_250_000.0), // AR
+            ("2000".into(), 875_000.0),   // AP
+            ("1010".into(), 500_000.0),   // Cash/Bank
+        ]);
+
+        let config = ConfirmationGeneratorConfig {
+            confirmations_per_engagement: (30, 30),
+            ..Default::default()
+        };
+        let mut gen = ConfirmationGenerator::with_config(42, config);
+        let (confs, _) = gen.generate_confirmations_with_balances(
+            &engagement,
+            &empty_workpapers(),
+            &accounts,
+            &balances,
+        );
+
+        assert!(!confs.is_empty());
+
+        // AR confirmations should have book_balance equal to the AR total (1,250,000).
+        let ar_confs: Vec<_> = confs
+            .iter()
+            .filter(|c| c.confirmation_type == ConfirmationType::AccountsReceivable)
+            .collect();
+        for conf in &ar_confs {
+            let expected = Decimal::from_f64(1_250_000.0).unwrap();
+            assert_eq!(
+                conf.book_balance, expected,
+                "AR confirmation should use real AR balance"
+            );
+        }
+
+        // Bank confirmations should use Cash balance (500,000).
+        let bank_confs: Vec<_> = confs
+            .iter()
+            .filter(|c| c.confirmation_type == ConfirmationType::BankBalance)
+            .collect();
+        for conf in &bank_confs {
+            let expected = Decimal::from_f64(500_000.0).unwrap();
+            assert_eq!(
+                conf.book_balance, expected,
+                "Bank confirmation should use real Cash balance"
+            );
+        }
+
+        // AP confirmations should use AP balance (875,000).
+        let ap_confs: Vec<_> = confs
+            .iter()
+            .filter(|c| c.confirmation_type == ConfirmationType::AccountsPayable)
+            .collect();
+        for conf in &ap_confs {
+            let expected = Decimal::from_f64(875_000.0).unwrap();
+            assert_eq!(
+                conf.book_balance, expected,
+                "AP confirmation should use real AP balance"
+            );
+        }
+    }
+
+    /// When balances are empty, the balance-weighted method falls back to synthetic values.
+    #[test]
+    fn test_balance_weighted_empty_balances_uses_synthetic() {
+        let engagement = create_test_engagement();
+        let accounts = vec!["1100".to_string()];
+        let empty_balances: HashMap<String, f64> = HashMap::new();
+
+        let mut gen = make_gen(42);
+        let (confs, _) = gen.generate_confirmations_with_balances(
+            &engagement,
+            &empty_workpapers(),
+            &accounts,
+            &empty_balances,
+        );
+
+        assert!(!confs.is_empty());
+        // All book balances should be in the synthetic $10k-$5M range.
+        for conf in &confs {
+            let bal = conf.book_balance;
+            assert!(
+                bal >= Decimal::new(10_000_00, 2) && bal <= Decimal::new(5_000_000_00, 2),
+                "expected synthetic balance in 10k-5M range, got {bal}"
             );
         }
     }

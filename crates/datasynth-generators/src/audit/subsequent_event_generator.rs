@@ -38,6 +38,24 @@ impl Default for SubsequentEventGeneratorConfig {
     }
 }
 
+/// Input context for coherent subsequent event generation.
+///
+/// Provides real financial metrics and risk profile data so that generated
+/// events scale proportionally to the entity and reflect its risk landscape.
+#[derive(Debug, Clone)]
+pub struct SubsequentEventInput {
+    /// Total revenue for the period.
+    pub total_revenue: Decimal,
+    /// Total assets at period-end.
+    pub total_assets: Decimal,
+    /// Pre-tax income for the period (may be negative for loss-making entities).
+    pub pretax_income: Decimal,
+    /// Account areas assessed as high or moderate risk by the CRA.
+    pub high_risk_areas: Vec<String>,
+    /// Whether the going-concern assessment identified material uncertainty.
+    pub going_concern_doubt: bool,
+}
+
 /// Generator for ISA 560 / IAS 10 subsequent events.
 pub struct SubsequentEventGenerator {
     rng: ChaCha8Rng,
@@ -148,6 +166,110 @@ impl SubsequentEventGenerator {
             .collect()
     }
 
+    /// Generate subsequent events with real financial context.
+    ///
+    /// Unlike [`generate_for_entity`], this method:
+    /// - Scales financial impact as 0.5–5% of the larger of `total_revenue` and
+    ///   `total_assets`, producing amounts proportional to entity size.
+    /// - Biases event type selection toward risk areas present in the CRA
+    ///   (e.g. more `AssetImpairment` when inventory/fixed-asset risk is high).
+    /// - Increases event count and adjusting probability when going-concern
+    ///   doubt exists.
+    /// - Favours `LitigationSettlement` / `RestructuringAnnouncement` when the
+    ///   entity is loss-making.
+    pub fn generate_for_entity_with_context(
+        &mut self,
+        entity_code: &str,
+        period_end_date: NaiveDate,
+        input: &SubsequentEventInput,
+    ) -> Vec<SubsequentEvent> {
+        info!(
+            "Generating context-aware subsequent events for entity {} period-end {}",
+            entity_code, period_end_date
+        );
+
+        // --- Event count ---
+        let mut count = self.rng.random_range(0..=self.config.max_events_per_period);
+        if input.going_concern_doubt {
+            count += self.rng.random_range(1..=2);
+        }
+
+        // --- Adjusting probability ---
+        let adjusting_prob = if input.going_concern_doubt {
+            0.60
+        } else {
+            self.config.adjusting_probability
+        };
+
+        // --- Financial impact range (0.5–5% of larger of revenue / assets) ---
+        let base = std::cmp::max(input.total_revenue, input.total_assets);
+        let base_f64 = base
+            .to_string()
+            .parse::<f64>()
+            .unwrap_or(1_000_000.0)
+            .abs()
+            .max(100_000.0); // floor to avoid degenerate tiny impacts
+        let impact_lo = base_f64 * 0.005;
+        let impact_hi = base_f64 * 0.05;
+
+        // --- Discovery window ---
+        let window_end_days = self.rng.random_range(
+            self.config.discovery_window_days.0..=self.config.discovery_window_days.1,
+        );
+        let window_end = period_end_date + Duration::days(window_end_days);
+
+        let mut events = Vec::with_capacity(count as usize);
+
+        for _ in 0..count {
+            let event_offset_days = self.rng.random_range(1..=window_end_days);
+            let event_date = period_end_date + Duration::days(event_offset_days);
+
+            let discovery_offset = self
+                .rng
+                .random_range(0..=(window_end - event_date).num_days());
+            let discovery_date = (event_date + Duration::days(discovery_offset)).min(window_end);
+
+            let event_type = self.weighted_event_type(
+                &input.high_risk_areas,
+                input.pretax_income.is_sign_negative(),
+            );
+            let classification = if self.rng.random::<f64>() < adjusting_prob {
+                EventClassification::Adjusting
+            } else {
+                EventClassification::NonAdjusting
+            };
+
+            let description = self.describe_event(event_type, &classification, entity_code);
+
+            let mut event = SubsequentEvent::new(
+                entity_code,
+                event_date,
+                discovery_date,
+                event_type,
+                classification,
+                description,
+            );
+
+            let has_impact = matches!(classification, EventClassification::Adjusting)
+                || self.rng.random::<f64>() < 0.50;
+
+            if has_impact {
+                let impact_raw = self.rng.random_range(impact_lo..=impact_hi);
+                let impact = Decimal::try_from(impact_raw).unwrap_or(Decimal::new(100_000, 0));
+                event = event.with_financial_impact(impact);
+            }
+
+            events.push(event);
+        }
+
+        info!(
+            "Generated {} context-aware subsequent events for entity {}",
+            events.len(),
+            entity_code
+        );
+        events
+    }
+
     fn random_event_type(&mut self) -> SubsequentEventType {
         match self.rng.random_range(0u8..8) {
             0 => SubsequentEventType::LitigationSettlement,
@@ -159,6 +281,58 @@ impl SubsequentEventGenerator {
             6 => SubsequentEventType::MergerAnnouncement,
             _ => SubsequentEventType::DividendDeclaration,
         }
+    }
+
+    /// Select event type with weights influenced by high-risk areas and loss
+    /// status.  Each event type starts with a base weight of 1.0; matches on
+    /// risk area or loss-making bump the weight upward.
+    fn weighted_event_type(
+        &mut self,
+        high_risk_areas: &[String],
+        is_loss_making: bool,
+    ) -> SubsequentEventType {
+        let has_risk = |keywords: &[&str]| -> bool {
+            high_risk_areas.iter().any(|area| {
+                let lower = area.to_lowercase();
+                keywords.iter().any(|kw| lower.contains(kw))
+            })
+        };
+
+        let mut weights: Vec<(SubsequentEventType, f64)> = vec![
+            (SubsequentEventType::LitigationSettlement, 1.0),
+            (SubsequentEventType::CustomerBankruptcy, 1.0),
+            (SubsequentEventType::AssetImpairment, 1.0),
+            (SubsequentEventType::RestructuringAnnouncement, 1.0),
+            (SubsequentEventType::NaturalDisaster, 1.0),
+            (SubsequentEventType::RegulatoryChange, 1.0),
+            (SubsequentEventType::MergerAnnouncement, 1.0),
+            (SubsequentEventType::DividendDeclaration, 1.0),
+        ];
+
+        // Boost asset impairment when inventory or fixed-asset risk is present.
+        if has_risk(&["inventory", "fixed asset", "ppe", "property"]) {
+            weights[2].1 += 3.0;
+        }
+        // Boost customer bankruptcy when receivable risk is present.
+        if has_risk(&["receivable", "trade receivable", "revenue"]) {
+            weights[1].1 += 3.0;
+        }
+        // Favour litigation / restructuring for loss-making entities.
+        if is_loss_making {
+            weights[0].1 += 2.0; // LitigationSettlement
+            weights[3].1 += 2.0; // RestructuringAnnouncement
+        }
+
+        let total: f64 = weights.iter().map(|(_, w)| w).sum();
+        let r: f64 = self.rng.random::<f64>() * total;
+        let mut cumulative = 0.0;
+        for (et, w) in &weights {
+            cumulative += w;
+            if r < cumulative {
+                return *et;
+            }
+        }
+        SubsequentEventType::DividendDeclaration
     }
 
     fn describe_event(
@@ -299,6 +473,74 @@ mod tests {
                 ratio
             );
         }
+    }
+
+    fn default_input() -> SubsequentEventInput {
+        SubsequentEventInput {
+            total_revenue: Decimal::new(200_000_000, 0),
+            total_assets: Decimal::new(350_000_000, 0),
+            pretax_income: Decimal::new(15_000_000, 0),
+            high_risk_areas: vec![],
+            going_concern_doubt: false,
+        }
+    }
+
+    #[test]
+    fn test_context_aware_scales_impact() {
+        let _gen = SubsequentEventGenerator::new(42);
+        let input = default_input();
+        // Generate many to get at least one with impact
+        let mut impacts = Vec::new();
+        for seed in 0..50u64 {
+            let mut g = SubsequentEventGenerator::new(seed);
+            let events = g.generate_for_entity_with_context("C001", period_end(), &input);
+            for e in &events {
+                if let Some(impact) = e.financial_impact {
+                    impacts.push(impact);
+                }
+            }
+        }
+        // Impacts should be scaled to 0.5–5% of $350M (the larger base)
+        // i.e. $1.75M–$17.5M
+        let lower = Decimal::new(1_750_000, 0);
+        let upper = Decimal::new(17_500_000, 0);
+        for impact in &impacts {
+            assert!(
+                *impact >= lower * Decimal::new(95, 2) && *impact <= upper * Decimal::new(105, 2),
+                "impact {} should be roughly between {} and {}",
+                impact,
+                lower,
+                upper
+            );
+        }
+    }
+
+    #[test]
+    fn test_going_concern_increases_events() {
+        let mut counts_no_gc = Vec::new();
+        let mut counts_gc = Vec::new();
+        for seed in 0..100u64 {
+            let mut g1 = SubsequentEventGenerator::new(seed);
+            let input_no_gc = default_input();
+            let events = g1.generate_for_entity_with_context("C001", period_end(), &input_no_gc);
+            counts_no_gc.push(events.len());
+
+            let mut g2 = SubsequentEventGenerator::new(seed);
+            let input_gc = SubsequentEventInput {
+                going_concern_doubt: true,
+                ..default_input()
+            };
+            let events = g2.generate_for_entity_with_context("C001", period_end(), &input_gc);
+            counts_gc.push(events.len());
+        }
+        let avg_no_gc: f64 = counts_no_gc.iter().sum::<usize>() as f64 / counts_no_gc.len() as f64;
+        let avg_gc: f64 = counts_gc.iter().sum::<usize>() as f64 / counts_gc.len() as f64;
+        assert!(
+            avg_gc > avg_no_gc,
+            "going concern should produce more events on average ({} vs {})",
+            avg_gc,
+            avg_no_gc
+        );
     }
 
     #[test]
