@@ -229,8 +229,10 @@ impl SubsequentEventGenerator {
                 .random_range(0..=(window_end - event_date).num_days());
             let discovery_date = (event_date + Duration::days(discovery_offset)).min(window_end);
 
-            let event_type =
-                self.weighted_event_type(&input.high_risk_areas, input.pretax_income.is_sign_negative());
+            let event_type = self.weighted_event_type(
+                &input.high_risk_areas,
+                input.pretax_income.is_sign_negative(),
+            );
             let classification = if self.rng.random::<f64>() < adjusting_prob {
                 EventClassification::Adjusting
             } else {
@@ -506,7 +508,9 @@ mod tests {
             assert!(
                 *impact >= lower * Decimal::new(95, 2) && *impact <= upper * Decimal::new(105, 2),
                 "impact {} should be roughly between {} and {}",
-                impact, lower, upper
+                impact,
+                lower,
+                upper
             );
         }
     }
@@ -534,7 +538,8 @@ mod tests {
         assert!(
             avg_gc > avg_no_gc,
             "going concern should produce more events on average ({} vs {})",
-            avg_gc, avg_no_gc
+            avg_gc,
+            avg_no_gc
         );
     }
 

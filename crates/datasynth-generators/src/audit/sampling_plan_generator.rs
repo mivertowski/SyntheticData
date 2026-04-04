@@ -101,8 +101,7 @@ fn account_area_to_prefixes(account_area: &str) -> Vec<&'static str> {
         vec!["12", "13"]
     } else if lower.contains("cash") || lower.contains("bank") {
         vec!["10"]
-    } else if lower.contains("fixed asset") || lower.contains("ppe") || lower.contains("property")
-    {
+    } else if lower.contains("fixed asset") || lower.contains("ppe") || lower.contains("property") {
         vec!["14", "15", "16"]
     } else if lower.contains("equity") || lower.contains("capital") {
         vec!["3"]
@@ -145,9 +144,7 @@ fn filter_je_lines_for_area<'a>(
             let matches = if prefixes.is_empty() {
                 true
             } else {
-                prefixes
-                    .iter()
-                    .any(|p| line.account_code.starts_with(p))
+                prefixes.iter().any(|p| line.account_code.starts_with(p))
             };
             if matches {
                 let amount = (line.debit_amount - line.credit_amount).abs();

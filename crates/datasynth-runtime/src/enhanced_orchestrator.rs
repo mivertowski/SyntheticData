@@ -11393,8 +11393,12 @@ impl EnhancedOrchestrator {
         let tb_entity = context.company_code.clone();
         let tb_fy = context.fiscal_year;
         result.artifacts.journal_entries = std::mem::take(&mut context.journal_entries);
-        result.artifacts.trial_balance_entries =
-            compute_trial_balance_entries(entries, &tb_entity, tb_fy, self.coa.as_ref().map(|c| c.as_ref()));
+        result.artifacts.trial_balance_entries = compute_trial_balance_entries(
+            entries,
+            &tb_entity,
+            tb_fy,
+            self.coa.as_ref().map(|c| c.as_ref()),
+        );
 
         // 5. Map ArtifactBag fields to AuditSnapshot.
         let bag = result.artifacts;
@@ -12794,8 +12798,8 @@ fn compute_trial_balance_entries(
 
     balances
         .into_iter()
-        .map(|(account_code, (debit, credit))| {
-            datasynth_audit_fsm::artifact::TrialBalanceEntry {
+        .map(
+            |(account_code, (debit, credit))| datasynth_audit_fsm::artifact::TrialBalanceEntry {
                 account_description: coa
                     .and_then(|c| c.get_account(&account_code))
                     .map(|a| a.description().to_string())
@@ -12806,8 +12810,8 @@ fn compute_trial_balance_entries(
                 net_balance: debit - credit,
                 entity_code: entity_code.to_string(),
                 period: format!("FY{}", fiscal_year),
-            }
-        })
+            },
+        )
         .collect()
 }
 

@@ -82,11 +82,7 @@ fn key_items_use_real_document_ids_and_exceed_tolerable_error() {
     );
 
     let mut gen = SamplingPlanGenerator::new(42);
-    let (plans, items) = gen.generate_for_cras_with_population(
-        &[cra],
-        Some(te),
-        &jes,
-    );
+    let (plans, items) = gen.generate_for_cras_with_population(&[cra], Some(te), &jes);
 
     assert_eq!(plans.len(), 1);
     let plan = &plans[0];
@@ -150,11 +146,7 @@ fn representative_items_use_real_document_ids() {
     );
 
     let mut gen = SamplingPlanGenerator::new(99);
-    let (plans, items) = gen.generate_for_cras_with_population(
-        &[cra],
-        Some(te),
-        &jes,
-    );
+    let (plans, items) = gen.generate_for_cras_with_population(&[cra], Some(te), &jes);
 
     assert_eq!(plans.len(), 1);
 
@@ -196,11 +188,7 @@ fn fallback_to_synthetic_when_no_matching_jes() {
     );
 
     let mut gen = SamplingPlanGenerator::new(77);
-    let (plans, items) = gen.generate_for_cras_with_population(
-        &[cra],
-        Some(te),
-        &jes,
-    );
+    let (plans, items) = gen.generate_for_cras_with_population(&[cra], Some(te), &jes);
 
     assert_eq!(plans.len(), 1, "Should still generate a plan via fallback");
     let plan = &plans[0];
@@ -243,11 +231,7 @@ fn population_metrics_reflect_real_data() {
     );
 
     let mut gen = SamplingPlanGenerator::new(55);
-    let (plans, _items) = gen.generate_for_cras_with_population(
-        &[cra],
-        Some(te),
-        &jes,
-    );
+    let (plans, _items) = gen.generate_for_cras_with_population(&[cra], Some(te), &jes);
 
     assert_eq!(plans.len(), 1);
     let plan = &plans[0];
@@ -275,11 +259,7 @@ fn key_items_capped_at_20() {
     );
 
     let mut gen = SamplingPlanGenerator::new(42);
-    let (plans, _items) = gen.generate_for_cras_with_population(
-        &[cra],
-        Some(te),
-        &jes,
-    );
+    let (plans, _items) = gen.generate_for_cras_with_population(&[cra], Some(te), &jes);
 
     assert_eq!(plans.len(), 1);
     let plan = &plans[0];

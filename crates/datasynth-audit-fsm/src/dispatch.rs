@@ -880,15 +880,8 @@ impl StepDispatcher {
         });
 
         let (account_area, risk_level, account_balance) = if let Some(cra) = matching_cra {
-            let balance = ctx
-                .account_balances
-                .iter()
-                .find(|(code, _)| {
-                    let area_lower = cra.account_area.to_lowercase();
-                    code.to_lowercase().contains(&area_lower)
-                        || area_lower.contains(&code.to_lowercase())
-                })
-                .and_then(|(_, bal)| rust_decimal::Decimal::from_f64_retain(bal.abs()));
+            let balance = balance_for_area(&cra.account_area, &ctx.account_balances)
+                .and_then(rust_decimal::Decimal::from_f64_retain);
 
             (
                 Some(cra.account_area.clone()),
@@ -1149,15 +1142,7 @@ impl StepDispatcher {
                 });
 
                 if let Some(cra) = matching_cra {
-                    let balance = ctx
-                        .account_balances
-                        .iter()
-                        .find(|(code, _)| {
-                            let area_lower = cra.account_area.to_lowercase();
-                            code.to_lowercase().contains(&area_lower)
-                                || area_lower.contains(&code.to_lowercase())
-                        })
-                        .map(|(_, bal)| bal.abs());
+                    let balance = balance_for_area(&cra.account_area, &ctx.account_balances);
 
                     EvidenceContext {
                         risk_level: Some(format!("{}", cra.combined_risk)),
@@ -1437,6 +1422,67 @@ impl StepDispatcher {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/// Map an audit account area name to GL account code prefixes.
+///
+/// Used to look up real account balances from `EngagementContext.account_balances`
+/// (which is keyed by GL code like `"1100"`, `"4000"`) given a CRA account area
+/// name like `"Revenue"` or `"Trade Receivables"`.
+fn account_area_to_gl_prefixes(account_area: &str) -> Vec<&'static str> {
+    let lower = account_area.to_lowercase();
+    if lower.contains("revenue") || lower.contains("sales") {
+        vec!["4"]
+    } else if lower.contains("receivable") {
+        vec!["11"]
+    } else if lower.contains("payable") {
+        vec!["20"]
+    } else if lower.contains("inventory") || lower.contains("stock") {
+        vec!["12", "13"]
+    } else if lower.contains("cash") || lower.contains("bank") {
+        vec!["10"]
+    } else if lower.contains("fixed asset") || lower.contains("ppe") || lower.contains("property") {
+        vec!["14", "15", "16"]
+    } else if lower.contains("equity") || lower.contains("capital") {
+        vec!["3"]
+    } else if lower.contains("expense") || lower.contains("cost") {
+        vec!["5", "6"]
+    } else if lower.contains("debt") || lower.contains("loan") || lower.contains("borrow") {
+        vec!["23", "24"]
+    } else if lower.contains("tax") {
+        vec!["17", "25"]
+    } else if lower.contains("provision") {
+        vec!["26"]
+    } else if lower.contains("intangible") || lower.contains("goodwill") {
+        vec!["19"]
+    } else if lower.contains("interest") {
+        vec!["71"]
+    } else if lower.contains("depreciation") || lower.contains("amortization") {
+        vec!["60"]
+    } else {
+        vec![]
+    }
+}
+
+/// Sum account balances for a given account area using GL prefix mapping.
+fn balance_for_area(
+    account_area: &str,
+    account_balances: &std::collections::HashMap<String, f64>,
+) -> Option<f64> {
+    let prefixes = account_area_to_gl_prefixes(account_area);
+    if prefixes.is_empty() {
+        return None;
+    }
+    let total: f64 = account_balances
+        .iter()
+        .filter(|(code, _)| prefixes.iter().any(|p| code.starts_with(p)))
+        .map(|(_, bal)| bal.abs())
+        .sum();
+    if total > 0.0 {
+        Some(total)
+    } else {
+        None
+    }
+}
 
 /// Map a step command string to the most appropriate `WorkpaperSection`.
 #[allow(clippy::if_same_then_else)]

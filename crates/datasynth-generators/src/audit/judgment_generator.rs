@@ -211,15 +211,9 @@ impl JudgmentGenerator {
                     parts.push(format!("with aggregate amount of ${}", total));
                     if let Some(mat) = context.materiality_amount {
                         if total < mat {
-                            parts.push(format!(
-                                "which is below overall materiality of ${}",
-                                mat
-                            ));
+                            parts.push(format!("which is below overall materiality of ${}", mat));
                         } else {
-                            parts.push(format!(
-                                "which exceeds overall materiality of ${}",
-                                mat
-                            ));
+                            parts.push(format!("which exceeds overall materiality of ${}", mat));
                         }
                     }
                 }
@@ -1126,7 +1120,10 @@ mod tests {
             found_materiality = true;
         }
         // At minimum the function should not panic
-        assert!(found_materiality || true, "context-aware judgment generated successfully");
+        assert!(
+            found_materiality || true,
+            "context-aware judgment generated successfully"
+        );
     }
 
     #[test]

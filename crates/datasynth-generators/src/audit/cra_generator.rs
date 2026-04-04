@@ -679,10 +679,7 @@ mod tests {
 
     #[test]
     fn balance_weighted_same_count_as_unweighted() {
-        let balances = HashMap::from([
-            ("4000".into(), 5_000_000.0),
-            ("1100".into(), 1_250_000.0),
-        ]);
+        let balances = HashMap::from([("4000".into(), 5_000_000.0), ("1100".into(), 1_250_000.0)]);
         let mut gen1 = CraGenerator::new(99);
         let cras_unweighted = gen1.generate_for_entity("C001", None);
 

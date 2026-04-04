@@ -10,8 +10,8 @@ use chrono::Duration;
 use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
-use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::Decimal;
 
 use datasynth_core::models::audit::{
     AuditEngagement, ConfirmationResponse, ConfirmationStatus, ConfirmationType,
