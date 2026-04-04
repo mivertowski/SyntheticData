@@ -29,7 +29,7 @@ pub use anderson_darling::{
     AndersonDarlingAnalysis, AndersonDarlingAnalyzer, CriticalValues, FittedParameters,
     TargetDistribution,
 };
-pub use benford::{BenfordAnalysis, BenfordAnalyzer, BenfordConformity};
+pub use benford::{BenfordAnalysis, BenfordAnalyzer, BenfordConformity, SecondDigitAnalysis};
 pub use chi_squared::{
     BinFrequency, BinningStrategy, ChiSquaredAnalysis, ChiSquaredAnalyzer, ExpectedDistribution,
 };

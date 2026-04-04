@@ -60,10 +60,11 @@ pub use error::{EvalError, EvalResult};
 pub use statistical::{
     AmountDistributionAnalysis, AmountDistributionAnalyzer, AnomalyRealismEvaluation,
     AnomalyRealismEvaluator, BenfordAnalysis, BenfordAnalyzer, BenfordConformity,
-    DetectionDifficulty, DriftDetectionAnalysis, DriftDetectionAnalyzer, DriftDetectionEntry,
-    DriftDetectionMetrics, DriftEventCategory, LabeledDriftEvent, LabeledEventAnalysis,
-    LineItemAnalysis, LineItemAnalyzer, LineItemEntry, StatisticalEvaluation, TemporalAnalysis,
-    TemporalAnalyzer, TemporalEntry,
+    CorrelationAnalysis, CorrelationAnalyzer, CorrelationCheckResult, DetectionDifficulty,
+    DriftDetectionAnalysis, DriftDetectionAnalyzer, DriftDetectionEntry, DriftDetectionMetrics,
+    DriftEventCategory, ExpectedCorrelation, LabeledDriftEvent, LabeledEventAnalysis,
+    LineItemAnalysis, LineItemAnalyzer, LineItemEntry, SecondDigitAnalysis, StatisticalEvaluation,
+    TemporalAnalysis, TemporalAnalyzer, TemporalEntry,
 };
 
 pub use coherence::{
