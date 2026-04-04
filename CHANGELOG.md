@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-04-04
+
+### Added
+
+#### Audit FSM Financial Data Coherence
+- **Real financial metrics in FSM path**: materiality, going concern, and all audit artifacts now use account-range-filtered JE data (revenue from 4xxx, assets from 1xxx, expenses from 5xxx/6xxx, equity from 3xxx) instead of hardcoded zeros
+- **JE-aware sampling (ISA 530)**: key items selected from actual JE lines exceeding tolerable error with real `document_id` references; representative items systematically selected from real JE population
+- **Account-area-to-GL mapping**: 15+ audit account areas (Revenue, Trade Receivables, Inventory, etc.) mapped to GL code prefixes for coherent filtering across all generators
+- **Balance-weighted CRA risk assessments**: inherent risk ratings now weighted by account balance proportion (>15% of total bumps up, <2% bumps down)
+- **Real confirmation amounts (ISA 505)**: AR/AP/bank confirmation book balances derived from actual GL account balances instead of random $10k-$5M
+- **Context-aware analytical procedures (ISA 520)**: actual_value anchored to real account balances with realistic variance
+- **Data-driven going concern (ISA 570)**: assessments use real financial ratios (net income, working capital, operating cash flow, debt) via `generate_for_entity_with_input`
+- **Risk-weighted subsequent events (ISA 560)**: event types weighted by CRA high-risk areas, financial impact scaled to 1-5% of revenue/assets, going concern doubt increases event count
+- **Context-aware professional judgments**: materiality judgments cite actual amounts and basis, risk judgments reference specific high-risk areas, going concern conclusions match actual assessment
+- **Assertion-matched audit evidence (ISA 500)**: evidence types selected by assertion (Existence -> confirmation, Completeness -> analytical), risk level drives external evidence proportion, amounts anchored to real GL balances
+- **Data-enriched workpapers (ISA 230)**: titles include account area and risk level, objectives cite real GL balances and performance materiality, procedures reference actual sampling plan parameters
+- **Semantic finding-to-JE linking**: findings enriched with JE references matched by GL account area instead of round-robin assignment
+- **Configurable auditor firm name and accounting framework**: removed hardcoded values in favor of EngagementContext fields populated from config
+- **JE population and trial balance in output**: `ArtifactBag` includes full journal entry population and derived trial balance with CoA account descriptions for downstream analytics
+- **Multi-company JE filtering**: FSM path filters journal entries by company_code before all computations
+
+### Fixed
+- **Revenue/asset calculations**: FSM path now uses account-range filters (matching legacy path) instead of summing all debits/credits
+- **Gross profit**: computed from real COGS (5xxx accounts) instead of hardcoded 35% of revenue
+- **Operating cash flow**: computed as pretax income + depreciation (60xx) instead of hardcoded 85% approximation
+- **Working capital**: computed as current assets (10xx-13xx) minus current liabilities (20xx-22xx) instead of total assets minus total debt
+- **Net balance computation**: all financial metrics use debit-credit netting with correct sign conventions
+- **Double JE clone eliminated**: uses `std::mem::take` to move JE data instead of cloning twice
+
 ## [2.0.0] - 2026-03-25
 
 ### Added
